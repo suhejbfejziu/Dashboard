@@ -1,36 +1,31 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { Link } from 'react-router-dom';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { UserContext } from '../../../auth/UserContext';
-import { createPost, getCategories } from '../../../api/posts';
+import { getCategories } from '../../../api/posts';
+import $ from 'jquery';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useForm } from 'react-hook-form';
 import PostAddIcon from '@mui/icons-material/PostAdd';
-import { Avatar, 
-         Button, 
-         CssBaseline, 
-         TextField, 
-         InputLabel, 
-         MenuItem, 
-         FormControl, 
-         Select, 
-         Box, 
-         Typography, 
-         Container, 
-         Backdrop, 
-         CircularProgress } from '@mui/material';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import CssBaseline from '@mui/material/CssBaseline';
+import TextField from '@mui/material/TextField';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import FormControl from '@mui/material/FormControl';
 
 export default function CreatePost() {
     const location = useLocation();
-    const {userData} = useContext(UserContext);
     const [categories, setCategories] = useState([]);
-    const [title, setTitle] = useState(location.state?.title || '');
-    const [body, setBody] = useState(location.state?.body || '');
-    const [categoryId, setCategoryId] = useState('');
-    const [createdAt, setCreatedAt] = useState(
-        location.state?.createdAt ||
-        (new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60 * 1000).toISOString().substr(0, 16))
-    );
-    const [open, setOpen] = useState(false);
+    const {register, formState: {errors}, handleSubmit} = useForm()
     const postId = location.state?.post_id;
+    const {user_id} = JSON.parse(localStorage.getItem('user'))
     const theme = createTheme();
     const navigate = useNavigate();
 
@@ -40,85 +35,91 @@ export default function CreatePost() {
         .catch(error => console.error(error));
       }, [])
       
-    const handleClose = () => {
-        setOpen(false);
-    };
-
+    const handleCreatePost = (data) => {
+        const url = postId ? 'http://dashboard-adaptech.com/api/posts.php' : 'http://dashboard-adaptech.com/api/posts.php?posts';
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+            success: function(data) {
+            toast.success(data.success);
+            setTimeout(() => {
+                navigate('/dashboard/posts');
+              }, 1500);
+            },
+            error: function(error) {
+              toast.error(error);
+            }
+          });
+      };
 
     return (
         <ThemeProvider theme={theme}>
-            <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={open} onClick={handleClose}>
-                <CircularProgress color="inherit" />
-            </Backdrop>
             <Container sx={{ my: 4 }} component="main" maxWidth="xs">
+            <ToastContainer
+                position="bottom-left"
+                autoClose={1500}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark" />
                 <CssBaseline />
-                <Box
+                <Box>
+                    <Box                    
                     sx={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                    }}
-                >
-                    <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-                        <PostAddIcon />
-                    </Avatar>
-                    <Typography className="uppercase" component="h1" variant="h5">
-                        {location.state ? 'Edit Post' : 'Create post'}
-                    </Typography>
-                    <Box component="form" name="postForm" onSubmit={(e) => createPost(e, userData, categoryId, title, body, createdAt, postId,  navigate)} sx={{ mt: 1 }}>
-                        <TextField type="hidden" name="postId" value={postId} />
+                    }}>
+                        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+                            <PostAddIcon />
+                        </Avatar>
+                        <Typography className="uppercase" component="h1" variant="h5">
+                            {location.state ? 'Edit Post' : 'Create post'}
+                        </Typography>
+                    </Box>
+                    <Box component="form" onSubmit={handleSubmit(handleCreatePost)} sx={{ mt: 1 }}>
+                        {postId ? <input type="hidden" {...register('post_id')} value={postId} /> : ""}
+                        <input type='hidden' {...register('user_id')} value={user_id} />
                         <TextField
                             autoFocus
                             margin="normal"
-                            required
                             fullWidth
-                            id="author"
-                            name="author"
-                            type="text"
-                            label="Author"
-                            autoComplete="author"
-                            value={userData.full_name}
-                        />
-                        <TextField
-                            autoFocus
-                            margin="normal"
-                            required
-                            fullWidth
-                            id="title"
-                            name="title"
                             type="text"
                             label="Title"
-                            autoComplete="title"
-                            value={title}
-                            onChange={(e) => {
-                                setTitle(e.target.value);
-                            }}
+                            defaultValue={location.state?.title || ""}
+                            {...register('title', {required: true})}
+                            aria-invalid={errors.title ? "true" : "false"}
                         />
+                        {errors.title?.type === "required" && (
+                            <p className='text-red-500 text-sm'>Title is required</p>
+                        )}
                         <TextField
                             margin="normal"
-                            required
                             fullWidth
                             multiline
                             rows={4}
-                            id="body"
-                            name="body"
                             type="text"
+                            defaultValue={location.state?.body || ""}
                             label="What's on your mind?"
-                            value={body}
-                            onChange={(e) => {
-                                setBody(e.target.value);
-                            }}
+                            {...register('body', {required: true})}
+                            aria-invalid={errors.body ? "true" : "false"}
                         />
+                        {errors.body?.type === "required" && (
+                            <p className='text-red-500 text-sm'>Description is required</p>
+                        )}
                         <FormControl fullWidth margin="normal">
-                            <InputLabel id="demo-simple-select-label">Category</InputLabel>
+                            <InputLabel id="select-category">Category</InputLabel>
                             <Select
-                                labelId="demo-simple-select-label"
-                                id="category"
-                                name="category"
-                                required
+                                labelId="select-category"
                                 label="Category"
-                                value={categoryId}
-                                onChange={(e) => setCategoryId(e.target.value)} // Updated event handler
+                                {...register('category', {required: true})}
+                                aria-invalid={errors.category ? "true" : "false"}
+                                defaultValue=""
                             >
                                 {categories.map((category) => (
                                     <MenuItem key={category.category_id} value={category.category_id}>
@@ -127,28 +128,30 @@ export default function CreatePost() {
                                 ))}
                             </Select>
                         </FormControl>
+                        {errors.category?.type === "required" && (
+                            <p className='text-red-500 text-sm'>Category is required</p>
+                        )}
                         <TextField
                             margin="normal"
-                            required
                             fullWidth
-                            id="date"
-                            name="date"
                             type="datetime-local"
                             label="CreatedAt"
-                            value={createdAt}
-                            onChange={(e) => {
-                                setCreatedAt(e.target.value);
-                            }}
+                            defaultValue={location.state?.createdAt || ""}
+                            {...register('createdAt', {required: true})}
+                            aria-invalid={errors.createAt ? "true" : "false"}
                         />
+                        {errors.createdAt?.type === "required" && (
+                            <p className='text-red-500 text-sm'>Created At is required</p>
+                        )}
                         <Button
                             type="submit"
                             fullWidth
                             variant="contained"
-                            disabled={!title || !body || !createdAt} // Updated condition
                             sx={{ mt: 3, mb: 2 }}
                         >
                             {location.state ? 'Edit' : 'Post'}
                         </Button>
+                        <Button component={Link} to={"/dashboard/posts"} variant="outlined" fullWidth>Cancel</Button>
                     </Box>
                 </Box>
             </Container>

@@ -1,29 +1,30 @@
-import { useState } from "react"
 import { useNavigate, Link as RouterLink} from "react-router-dom"
-import { countries } from "../countries";
-import swal from "sweetalert";
-import $ from 'jquery';
-import 'jquery-mask-plugin/dist/jquery.mask.min.js';
-import axios from "axios";
+import { useForm } from "react-hook-form";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonIcon from '@mui/icons-material/Person';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Button, 
-         FormControl, 
-         InputLabel, 
-         Link, 
-         TextField, 
-         Autocomplete, 
-         CssBaseline, 
-         Typography,
-         Grid, 
-         Container, 
-         Box, 
-         Avatar, 
-         MenuItem, 
-         Select, 
-         Backdrop, 
-         CircularProgress } from '@mui/material';
+import Button from '@mui/material/Button';
+import Link from '@mui/material/Link';
+import TextField from '@mui/material/TextField';
+import CssBaseline from "@mui/material/CssBaseline";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Container from "@mui/material/Container";
+import Box from "@mui/material/Box";
+import Avatar from "@mui/material/Avatar";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import $ from 'jquery';
+
+function validatePassword(password) {
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$/;
+  return passwordRegex.test(password);
+}
+
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
 
 function Copyright(props) {
   return (
@@ -39,80 +40,45 @@ function Copyright(props) {
 }
 
 export default function SignUp(){
-    const [firstName, setFirstName] = useState('')
-    const [lastName, setLastName] = useState('')
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [country, setCountry] = useState('')
-    const [gender, setGender] = useState('')
-    const [phone, setPhone] = useState('')
-    const [birthday, setBirthday] = useState('')
-    const [isAdmin, setIsAdmin] = useState(false)
-    const [open, setOpen] = useState(false);
     const theme = createTheme();
     const navigate = useNavigate()
+    const { register, formState: { errors }, handleSubmit } = useForm();
     
-    const countryChangeHandler = (event, value) => {
-      if (value) {
-        setCountry(value.label);
-      } else {
-        setCountry('');
-      }
-    };
-
-    $(document).ready(function() {
-      $('#phone').mask('(000) 000-0000');
-    });
-
-    const handleClose = () => {
-      setOpen(false);
-    };
-
-    async function SignUp(e) {
-      e.preventDefault();
-      const formData = new FormData();
-      formData.append("firstName", firstName);
-      formData.append("lastName", lastName);
-      formData.append("email", email);
-      formData.append("password", password);
-      formData.append("country", country);
-      formData.append("gender", gender);
-      formData.append("phone", phone);
-      formData.append("date", birthday);
-      formData.append("isAdmin", Boolean(isAdmin));
-      formData.append("NewUser", "NewUser");
-    
-      try {
-        const response = await axios.post(
-          "http://dashboard-adaptech.com/api/users.php?users",
-          formData
-        );
-        const data = response.data;
-        if (data.error) {
-          swal("Error", `${data.error}`, "error");
-        } else if (data.success) {
-          swal("Success", `${data.success}`, "success");
-          setTimeout(() => {
-            navigate("/login");
-            swal.close()
-          }, 1500);
+    const handleSignUp = (data) => {
+      $.ajax({
+        url: "http://dashboard-adaptech.com/api/signup.php",
+        type: "POST",
+        data: data,
+        success: function(data) {
+          if (data.error) {
+            toast.error(data.error);
+          } else if (data.success) {
+            toast.success(data.success);
+            setTimeout(() => {
+              navigate('/login');
+            }, 1000);
+          }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          toast.error(errorThrown);
         }
-      } catch (err) {
-        swal("Error", `${err}`, "error");
-      }
-    }
+      });
+    };
     
         return (
             <ThemeProvider theme={theme}>
-                <Backdrop
-                  sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-                  open={open}
-                  onClick={handleClose}
-                >
-                  <CircularProgress color="inherit" />
-                </Backdrop>
-                <Avatar component={RouterLink} to={'/login'} sx={{ m: 2, bgcolor: 'secondary.main' }}>
+              <ToastContainer 
+              position="bottom-left"
+              autoClose={1500}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark" />
+                <Avatar component={RouterLink} to={'/login'} sx={{ m: 2, bgcolor: 'primary.main' }}>
                     <ArrowBackIcon />
                 </Avatar>
               <Container component="main" maxWidth="xs">
@@ -125,165 +91,77 @@ export default function SignUp(){
                     alignItems: 'center',
                   }}
                 >
-                  <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+                  <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
                     <PersonIcon />
                   </Avatar>
                   <Typography component="h1" variant="h5">
                     Sign Up
                   </Typography>
                   <Typography className="text-center" variant="subtitle1" color="text.secondary">
-                    We'll ask you for some basic information to get you started, and from there, you'll be able to take full advantage of all our features. 
+                    Let's get started by collecting some basic information from you so we can tailor our services to your needs.
                   </Typography>
-                  <Box sx={{mt: 2}} component="form" name='userForm' onSubmit={SignUp}>
+                  <Box sx={{mt: 2}} component="form" onSubmit={handleSubmit(handleSignUp)}>
                   <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
                     <TextField
                       autoFocus
-                      required
-                      id="firstName"
-                      name="firstName"
                       label="First name"
-                      fullWidth
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      autoComplete="first-name"
-                    />
+                      {...register("firstName", {required: true})}
+                      aria-invalid={errors.firstName ? "true" : "false"} />
+                      {errors.firstName?.type === "required" && (
+                        <p className='text-red-500 text-sm'>First Name is required</p>
+                      )}
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      required
-                      id="lastName"
-                      name="lastName"
                       label="Last name"
-                      fullWidth
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      autoComplete="last-name"
-                    />
+                      {...register("lastName", {required: true})}
+                      aria-invalid={errors.lastName ? "true" : "false"} />
+                      {errors.lastName?.type === "required" && (
+                        <p className='text-red-500 text-sm'>Last Name is required</p>
+                      )}
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
-                      required
-                      id="email"
-                      name="email"
+                      fullWidth
                       label="Email"
                       type="email"
-                      fullWidth
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      autoComplete="email"
+                      {...register("email", {
+                        required: true,
+                        validate: validateEmail
+                      })}
+                      aria-invalid={errors.email ? "true" : "false"}
                     />
+                    {errors.email?.type === "required" && (
+                      <p className='text-red-500 text-sm'>Email is required</p>
+                    )}
+                    {errors.email?.type === "validate" && (
+                      <p className='text-red-500 text-sm'>Invalid email address</p>
+                    )}
                   </Grid>
                   <Grid item xs={12}>
-                  <TextField
-                      required
+                    <TextField
                       fullWidth
-                      id="password"
-                      name="password"
                       type="password"
                       label="Password"
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value) }}
+                      {...register("password", {
+                        required: true,
+                        validate: validatePassword,
+                      })}
+                      aria-invalid={errors.password ? "true" : "false"}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
-                  <TextField
-                      required
-                      fullWidth
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      label="Confirm Password"
-                      value={confirmPassword}
-                      onChange={(e) => { setConfirmPassword(e.target.value) }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                  <Autocomplete
-                        id="country"
-                        options={countries}
-                        value={country}
-                        onChange={countryChangeHandler}
-                        autoHighlight
-                        isOptionEqualToValue={(option) => option.label || ""}
-                        renderOption={(props, option) => (
-                          <Box component="li" sx={{ '& > img': { mr: 2, flexShrink: 0 } }} {...props}>
-                            <img
-                              loading="lazy"
-                              width="20"
-                              src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
-                              srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
-                              alt=""
-                            />
-                            {option.label} ({option.code}) +{option.phone}
-                          </Box>
-                        )}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Choose a country"
-                            id="country"
-                            name="country"
-                            required
-                            fullWidth
-                            inputProps={{
-                              ...params.inputProps,
-                              autoComplete: 'new-password', // disable autocomplete and autofill
-                            }}
-                          />
-                        )}
-                      />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth >
-                      <InputLabel id="demo-simple-select-label">Gender *</InputLabel>
-                      <Select
-                        labelId="demo-simple-select-label"
-                        id="gender"
-                        name="gender"
-                        value={gender}
-                        label="Gender *"
-                        onChange={(e) => {setGender(e.target.value)}}
-                      >
-                        <MenuItem value="Male">Male</MenuItem>
-                        <MenuItem value="Female">Female</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                  <TextField
-                      required
-                      fullWidth
-                      id="phone"
-                      name="phone"
-                      type="numeric"
-                      label="Phone"
-                      value={phone}
-                      onChange={(e) => {setPhone(e.target.value)}}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                  <TextField
-                      required
-                      fullWidth
-                      id="date"
-                      name="date"
-                      type="date"
-                      label="Birthday"
-                      value={birthday}
-                      onChange={(e) => {setBirthday(e.target.value)}}
-                    />
+                    {errors.password?.type === "required" && (
+                      <p className='text-red-500 text-sm'>Password is required</p>
+                    )}
+                    {errors.password?.type === "validate" && (
+                      <p className='text-red-500 text-sm'>Password must be at least 7 characters long, start with an uppercase letter, and contain at least one special character</p>
+                    )}
                   </Grid>
                   </Grid>
-                  <Button
-                      type="submit"
-                      fullWidth
-                      variant="contained"
-                      sx={{ mt: 3, mb: 2 }}
-                      disabled={!firstName || !lastName || !email || !password || !gender || !phone || !birthday || password !== confirmPassword}
-                    >
-                      Sign Up
-                    </Button>
+                  <p className="text-sm text-gray-500 mt-2">By clicking Sign Up, you agree to our <a className="text-blue-600" href="#">Terms</a>, <a className="text-blue-600" href="#">Privacy Policy</a> and <a className="text-blue-600" href="#">Cookies Policy</a>.</p>
+                  <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
+                    Sign Up
+                  </Button>
                   </Box>
                     <Grid container>
                       <Grid item xs>
@@ -297,7 +175,7 @@ export default function SignUp(){
                         </Link>
                       </Grid>
                     </Grid>
-                </Box>
+                  </Box>
                 <Copyright sx={{ mt: 8, mb: 4 }} />
               </Container>
             </ThemeProvider>

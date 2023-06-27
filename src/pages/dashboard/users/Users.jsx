@@ -1,28 +1,22 @@
-import { useState, useEffect, useContext } from 'react';
-import { UserContext } from '../../../auth/UserContext';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { DataGrid } from '@mui/x-data-grid';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PropTypes from 'prop-types';
-import { getUsers, deleteUser } from '../../../api/users';
-import { Button, 
-         Typography, 
-         Table, 
-         TableBody, 
-         TableCell, 
-         TableContainer, 
-         TableHead, 
-         TableRow, 
-         Paper, 
-         Tooltip, 
-         IconButton, 
-         Badge, 
-         Tabs, 
-         Tab, 
-         Box, 
-         Alert } from '@mui/material';
-
+import swal from 'sweetalert';
+import { getUsers } from '../../../api/users';
+import Button from "@mui/material/Button";
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Badge from '@mui/material/Badge';
+import Alert from '@mui/material/Alert';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -37,8 +31,6 @@ function TabPanel(props) {
       {value === index && (
         <Box sx={{ p: 3 }}>
           {children}
-          {/* <Typography>
-          </Typography> */}
         </Box>
       )}
     </div>
@@ -58,161 +50,172 @@ function a11yProps(index) {
   };
 }
 
-export default function Users({darkMode}) {
+export default function Users({ darkMode }) {
   const [users, setUsers] = useState([]);
   const [value, setValue] = useState(0);
-  const {userData} = useContext(UserContext);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     getUsers(value)
-    .then(data => setUsers(data))
-    .catch(error => console.error(error));
+      .then(data => setUsers(data.map((user) => ({ ...user, id: user.user_id }))))
+      .catch(error => console.error(error));
   }, [value]);
-  
+
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
   
-  function editUser(user_id){
-    // Find the selected user from the users array
+  function handleEditUser(user_id) {
     const selectedUser = users.find(user => user.user_id === user_id);
-    
-    // Navigate to the CreateUser component and pass the selected user as state
     navigate('/dashboard/createuser', { state: selectedUser });
   }
-  
+
+  async function handleDeleteUser(user_id) {
+    try {
+      const willDelete = await swal({
+        title: "Are you sure?",
+        text: "Once deleted, you will not be able to recover this user!",
+        icon: "warning",
+        buttons: ["Cancel", "Delete"],
+        dangerMode: true,
+      });
+
+      if (willDelete) {
+        const response = await axios.get(`http://dashboard-adaptech.com/api/users.php?user_id=${user_id}`);
+        const data = response.data;
+
+        if (data.error) {
+          toast.error(data.error);
+        } else if (data.success) {
+          toast.success(data.success);
+          setUsers(prevUsers => prevUsers.filter(user => user.user_id !== user_id));
+        }
+      }
+    } catch (error) {
+      toast.error(error);
+    }
+  }
+
+  const columns = [
+    { field: 'id', headerName: 'ID', width: 100, align: 'center' },
+    { field: 'first_name', headerName: 'First Name', width: 200, align: 'center' },
+    { field: 'last_name', headerName: 'Last Name', width: 200, align: 'center' },
+    { field: 'email', headerName: 'Email', width: 250, align: 'center' },
+    {
+      field: 'edit',
+      headerName: 'Edit',
+      width: 200,
+      align: 'center',
+      sortable: false,
+      renderCell: (params) => (
+        <Button
+          variant="contained"
+          color="primary"
+          size="small"
+          startIcon={<EditIcon />}
+          onClick={() => handleEditUser(params.row.user_id)}
+        >
+          Edit
+        </Button>
+      ),
+    },
+    {
+      field: 'delete',
+      headerName: 'Delete',
+      width: 200,
+      align: 'center',
+      sortable: false,
+      renderCell: (params) => (
+        <Button
+          variant="contained"
+          color="secondary"
+          size="small"
+          startIcon={<DeleteIcon />}
+          onClick={() => handleDeleteUser(params.row.user_id)}
+        >
+          Delete
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <Box>
-    { userData.isAdmin === "true" ? 
-      (<Box>
-        <Box sx={{textAlign: 'center'}}>
-          <Typography sx={{mt:4, mb:2, textTransform: 'uppercase'}} variant='h5'>List of users</Typography>
+      <ToastContainer         
+        position="bottom-left"
+        autoClose={1500}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark" />
+      <Box>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography sx={{ mt: 4, mb: 2, textTransform: 'uppercase' }} variant='h5'>List of users</Typography>
           <Badge badgeContent={users.length} color="secondary">
             <Link to='/dashboard/createuser'>
-              <Button variant="contained">Create new user <PersonAddIcon sx={{ml: 0.5}} /></Button>
+              <Button variant="contained">Create new user <PersonAddIcon sx={{ ml: 0.5 }} /></Button>
             </Link>
           </Badge>
         </Box>
         <Box sx={{ width: '100%' }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mt:2 }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
             <Tabs textColor={darkMode ? 'inherit' : 'primary'} value={value} onChange={handleChange} aria-label="basic tabs example" centered>
               <Tab label="Simple Users" {...a11yProps(0)} />
               <Tab label="Admin Users" {...a11yProps(1)} />
             </Tabs>
           </Box>
           <TabPanel value={value} index={0}>
-          {users?.length ? 
-                ( <TableContainer className='my-4' component={Paper}>
-                  <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell align="center">ID</TableCell>
-                        <TableCell align="center">First Name</TableCell>
-                        <TableCell align="center">Last Name</TableCell>
-                        <TableCell align="center">Email</TableCell>
-                        <TableCell align="center">Country</TableCell>
-                        <TableCell align="center">Gender</TableCell>
-                        <TableCell align="center">Phone</TableCell>
-                        <TableCell align="center">Birthday</TableCell>
-                        <TableCell align="center">Edit</TableCell>
-                        <TableCell align="center">Delete</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow
-                          key={user.user_id}
-                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                        >
-                          <TableCell align="center" component="th" scope="row">{user.user_id}</TableCell>
-                          <TableCell align="center">{user.first_name}</TableCell>
-                          <TableCell align="center">{user.last_name}</TableCell>
-                          <TableCell align="center">{user.email}</TableCell>
-                          <TableCell align="center">{user.country}</TableCell>
-                          <TableCell align="center">{user.gender}</TableCell>
-                          <TableCell align="center">{user.phone}</TableCell>
-                          <TableCell align="center">{user.birthday}</TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="Edit">
-                              <IconButton onClick={() => editUser(user.user_id)}>
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="Delete">
-                              <IconButton onClick={() => deleteUser(user.user_id, setUsers)}>
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-              </TableContainer> ) : ( <Alert sx={{mx: 2, justifyContent: 'center'}} severity="info">No Simple Users found!</Alert> )
-          }
+            {users?.length ? (
+              <div style={{ height: 400, width: '100%' }}>
+                <DataGrid
+                  rows={users}
+                  columns={columns.map(column => ({
+                    ...column,
+                    headerAlign: 'center',
+                    align: 'center',
+                  }))}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { page: 0, pageSize: 5 },
+                    },
+                  }}
+                  pageSizeOptions={[5, 10]}
+                  checkboxSelection
+                />
+              </div>
+            ) : (
+              <Alert sx={{ mx: 2, justifyContent: 'center', textTransform: 'uppercase' }} severity="info">No Simple Users found!</Alert>
+            )}
           </TabPanel>
           <TabPanel value={value} index={1}>
-          {users?.length ? 
-                ( <TableContainer className='my-4' component={Paper}>
-                  <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell align="center">ID</TableCell>
-                        <TableCell align="center">First Name</TableCell>
-                        <TableCell align="center">Last Name</TableCell>
-                        <TableCell align="center">Email</TableCell>
-                        <TableCell align="center">Country</TableCell>
-                        <TableCell align="center">Gender</TableCell>
-                        <TableCell align="center">Phone</TableCell>
-                        <TableCell align="center">Birthday</TableCell>
-                        <TableCell align="center">Edit</TableCell>
-                        <TableCell align="center">Delete</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow
-                          key={user.user_id}
-                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                        >
-                          <TableCell align="center" component="th" scope="row">{user.user_id}</TableCell>
-                          <TableCell align="center">{user.first_name}</TableCell>
-                          <TableCell align="center">{user.last_name}</TableCell>
-                          <TableCell align="center">{user.email}</TableCell>
-                          <TableCell align="center">{user.country}</TableCell>
-                          <TableCell align="center">{user.gender}</TableCell>
-                          <TableCell align="center">{user.phone}</TableCell>
-                          <TableCell align="center">{user.birthday}</TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="Edit">
-                              <IconButton onClick={() => editUser(user.user_id)}>
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="Delete">
-                              <IconButton onClick={() => deleteUser(user.user_id)}>
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-              </TableContainer>) : ( <Alert sx={{mx: 2, justifyContent: 'center'}} severity="info">No Admin Users found!</Alert> )
-          }
+            {users?.length ? (
+              <div style={{ height: 400, width: '100%' }}>
+                <DataGrid
+                  rows={users}
+                  columns={columns.map(column => ({
+                    ...column,
+                    headerAlign: 'center',
+                    align: 'center',
+                  }))}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { page: 0, pageSize: 5 },
+                    },
+                  }}
+                  pageSizeOptions={[5, 10]}
+                  checkboxSelection
+                />
+              </div>
+            ) : (
+              <Alert sx={{ mx: 2, justifyContent: 'center', textTransform: 'uppercase' }} severity="info">No Admin Users found!</Alert>
+            )}
           </TabPanel>
-          {/* <TabPanel value={value} index={2}>
-            Item Three
-          </TabPanel> */}
         </Box>
-        </Box> ) : ''}
+      </Box>
     </Box>
   );
 }
-

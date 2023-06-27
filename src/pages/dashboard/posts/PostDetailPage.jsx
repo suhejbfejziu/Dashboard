@@ -1,39 +1,55 @@
-import { useEffect, useState, useContext } from "react"
+import { useEffect, useState } from "react"
 import { useParams } from "react-router"
-import { UserContext } from '../../../auth/UserContext';
 import { getPost } from "../../../api/posts";
-import { getComments, AddComment, editComment, deleteComment } from "../../../api/comments";
+import { getComments } from "../../../api/comments";
 import { getTimeElapsed } from "../../../utils";
+import { useForm } from "react-hook-form";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from "axios";
+import $ from 'jquery';
 import EmailIcon from '@mui/icons-material/Email';
 import PersonIcon from '@mui/icons-material/Person';
 import DescriptionIcon from '@mui/icons-material/Description';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { Box, 
-         TextField, 
-         Tooltip, 
-         Alert,
-         Button, 
-         Dialog,
-         DialogActions, 
-         DialogContent, 
-         DialogTitle, 
-         Card, 
-         CardContent, 
-         CardMedia, 
-         Typography, 
-         IconButton,
-         CircularProgress } from "@mui/material";
+import Box from "@mui/material/Box";
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import CircularProgress from '@mui/material/CircularProgress';
   
 export default function PostDetailPage(){
-    const {userData} = useContext(UserContext);
     const [posts, setPosts] = useState([])
     const [comments, setComments] = useState([])
-    const [commentId, setCommentId] = useState('');
-    const [body, setBody] = useState('')
     const [dialog, setDialog] = useState(false);
     const [dialogEdit, setDialogEdit] = useState(false);
+    const {register, handleSubmit} = useForm()
     const params = useParams()
+    const {...comment} = JSON.parse(localStorage.getItem('comment'))
+    const {...user} = JSON.parse(localStorage.getItem('user'))
+
+    const handleDialogOpen = () => {
+      setDialog(true);
+    }
+
+    const handleDialogClose = () => {
+      setDialog(false);
+    }
+
+    const handleDialogEditClose = () => {
+      setDialogEdit(false);
+    }
 
     useEffect(() => {
       getPost(params.id)
@@ -47,22 +63,77 @@ export default function PostDetailPage(){
       .catch(error => console.error(error));
     }, []);
 
-    const handleDialogOpen = () => {
-      setBody('');
-      setDialog(true);
+    const handleCreateComment = (data) => {
+      $.ajax({
+        url: 'http://dashboard-adaptech.com/api/comments.php',
+        type: 'POST',
+        data: data,
+        success: function(data) {
+          toast.success(data.success)
+          setTimeout(() => {
+            setDialog(false);
+          }, 1500);
+        },
+        error: function(error) {
+          toast.error(error)
+        }
+      });
     }
 
-    const handleDialogClose = () => {
-      setDialog(false);
+    const handleEditComment = (data) => {
+      $.ajax({
+        url: 'http://dashboard-adaptech.com/api/comments.php',
+        type: 'POST',
+        data: data,
+        success: function(data) {
+          toast.success(data.success);
+          setTimeout(() => {
+            setDialogEdit(false)
+          }, 1500);
+        },
+        error: function(error) {
+          toast.error(error);
+        }
+      });
     }
-
-    const handleDialogEditClose = () => {
-      setDialogEdit(false);
+  
+    async function handleDeleteComment(comment_id){
+      swal({
+        title: "Are you sure?",
+        text: "Once deleted, you will not be able to recover this comment!",
+        icon: "warning",
+        buttons: ["Cancel", "Delete"],
+        dangerMode: true,
+      })
+      .then(async (willDelete) => {
+        if (willDelete) {
+          try {
+            const response = await axios.get(`http://dashboard-adaptech.com/api/comments.php?comment_id=${comment_id}`);
+            const { data } = response;
+            if (data.error) {
+              toast.error(data.error);
+            } else if (data.success) {
+              toast.success(data.success);
+              setComments(prevComments => prevComments.filter(comment => comment.comment_id !== comment_id));
+            }
+          } catch (error) {
+            toast.error(error);
+          }
+        }
+      });
     }
 
     const handleDialogEditOpen = (comment) => {
-      setCommentId(comment.comment_id);
-      setBody(comment.body);
+      var comment = {
+        comment_id: comment.comment_id,
+        body: comment.body
+      };
+      
+      // Convert the object to JSON string
+      var commentJSON = JSON.stringify(comment);
+      
+      // Store the JSON string in localStorage
+      localStorage.setItem('comment', commentJSON);
       setDialogEdit(true);
     };
 
@@ -70,13 +141,27 @@ export default function PostDetailPage(){
     const commentsEl = comments.filter((obj) => obj.post_id === params.id)
     
     if(!postsEl){
-        return ( <Box sx={{ display: 'flex' }}>
-                  <CircularProgress />
-                </Box> )
+        return ( 
+        <Box sx={{ display: 'grid', placeContent: 'center' }}>
+            <CircularProgress />
+        </Box> 
+        )
     }
     
     return(
-        <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', alignItems: 'center'}}>
+      <>
+      <ToastContainer 
+      position="bottom-left"
+      autoClose={1500}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="dark" />
+      <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', alignItems: 'center', my: 4}}>
                 <Box>
                     <Card sx={{ maxWidth: 345, mx: 'auto', mt:4 }}>
                     <CardMedia
@@ -119,46 +204,15 @@ export default function PostDetailPage(){
                         {"Write Comment"}
                         </DialogTitle>
                         <DialogContent>
-                        <Box component="form" name="NewComment" onSubmit={(e) => AddComment(e, userData, params.id, body, setDialog)}>
-                        <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="name"
-                        name="name"
-                        type="text"
-                        label="Name"
-                        autoComplete="name"
-                        value={userData.full_name}
-                        />
-                        <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="email"
-                        name="email"
-                        type="email"
-                        label="Email"
-                        autoComplete="email"
-                        value={userData.email}
-                        />
-                        <TextField
-                        autoFocus
-                        margin="normal"
-                        required
-                        fullWidth
-                        multiline
-                        rows={4}
-                        id="body"
-                        name="body"
-                        type="text"
-                        label={`What's on your mind ?`}
-                        value={body}
-                        onChange={(e) => { setBody(e.target.value) }}
-                        />
+                        <Box component="form" onSubmit={handleSubmit(handleCreateComment)}>
+                        <input type="hidden" {...register('post_id')} value={params.id} />
+                        <input type="hidden" {...register('user_id')} value={user.user_id} />
+                        <TextField margin="normal" required fullWidth type="text" label="Name" value={user.full_name} />
+                        <TextField margin="normal" required fullWidth type="email" label="Email" value={user.email} />
+                        <TextField autoFocus margin="normal" required fullWidth multiline rows={4} type="text" label={`What's on your mind ?`} {...register('body')} />
                         <DialogActions>
                         <Button onClick={handleDialogClose}>Cancel</Button>
-                        <Button disabled={!body} type="submit" autoFocus>
+                        <Button type="submit" autoFocus>
                             Publish
                         </Button>
                         </DialogActions>
@@ -175,29 +229,11 @@ export default function PostDetailPage(){
                         {"Edit Comment"}
                         </DialogTitle>
                         <DialogContent>
-                        <Box component="form" name="commentEdit" onSubmit={(e) => editComment(e, commentId, body, setDialogEdit)}>
-                        <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="editname"
-                        name="name"
-                        type="text"
-                        label="Name"
-                        autoComplete="name"
-                        value={userData.full_name}
-                        />
-                        <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="editemail"
-                        name="email"
-                        type="email"
-                        label="Email"
-                        autoComplete="email"
-                        value={userData.email}
-                        />
+                        <Box component="form" onSubmit={handleSubmit(handleEditComment)}>
+                        <input type="hidden" {...register('EditComment')} />
+                        <input type="hidden" {...register('comment_id')} value={comment.comment_id} />
+                        <TextField margin="normal" required fullWidth type="text" label="Name" value={user.full_name} />
+                        <TextField margin="normal" required fullWidth type="email" label="Email" value={user.email} />
                         <TextField
                         autoFocus
                         margin="normal"
@@ -205,16 +241,14 @@ export default function PostDetailPage(){
                         fullWidth
                         multiline
                         rows={4}
-                        id="editbody"
-                        name="body"
                         type="text"
                         label={`What's on your mind?`}
-                        value={body}
-                        onChange={(e) => { setBody(e.target.value) }}
+                        defaultValue={comment.body}
+                        {...register('body')}
                         />
                         <DialogActions>
                         <Button onClick={handleDialogEditClose}>Cancel</Button>
-                        <Button disabled={!body} type="submit" autoFocus>
+                        <Button type="submit" autoFocus>
                             Save
                         </Button>
                         </DialogActions>
@@ -251,7 +285,7 @@ export default function PostDetailPage(){
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Delete" arrow>
-                              <IconButton aria-label="delete" onClick={() => deleteComment(comments.comment_id, setComments)}>
+                              <IconButton aria-label="delete" onClick={() => handleDeleteComment(comments.comment_id)}>
                                 <DeleteIcon />
                               </IconButton>
                             </Tooltip>
@@ -265,5 +299,6 @@ export default function PostDetailPage(){
                     }
                 </Box>
         </Box>
+      </>
     )
 }

@@ -1,62 +1,53 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { UserContext } from '../../auth/UserContext';
-import { countries } from '../../countries';
 import { getInitials, generateColors } from '../../utils';
 import $ from 'jquery';
-import 'jquery-mask-plugin/dist/jquery.mask.min.js';
 import axios from 'axios';
 import { deepOrange, deepPurple, blue } from '@mui/material/colors';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SecurityIcon from '@mui/icons-material/Security';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import NightlightIcon from '@mui/icons-material/Nightlight';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import { Button, 
-         Tooltip, 
-         Accordion, 
-         AccordionSummary, 
-         AccordionDetails, 
-         Typography, 
-         Avatar, 
-         TextField, 
-         Divider, 
-         FormControl, 
-         InputLabel, 
-         Select, 
-         MenuItem, 
-         Autocomplete, 
-         Box,
-         Snackbar,
-         Alert,
-         Switch,
-         Backdrop,
-         CircularProgress,
-         Grid } from '@mui/material';
+import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import TextField from '@mui/material/TextField';
+import Divider from '@mui/material/Divider';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import { useForm } from 'react-hook-form';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Modal from '@mui/material/Modal';
 
-const label = { inputProps: { 'aria-label': 'Switch demo' } };
+const style = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 400,
+  borderRadius: '6px',
+  bgcolor: 'background.paper',
+  boxShadow: 24,
+  p: 4,
+};
 
-export default function Profile({darkMode, toggleDarkMode}){
+export default function Profile(){
     const navigate = useNavigate();
-    const {userData} = useContext(UserContext);
-    const [userId, setUserId] = useState(userData?.user_id || "");
-    const [firstName, setFirstName] = useState(userData?.first_name || "");
-    const [lastName, setLastName] = useState(userData?.last_name || "");
-    const [country, setCountry] = useState(userData?.country || "");
-    const [birthday, setBirthday] = useState(userData?.birthday || "");
-    const [gender, setGender] = useState(userData?.gender || "");
-    const [phone, setPhone] = useState(userData?.phone || "");
-    const [email, setEmail] = useState(userData?.email || "");
-    const [currentPassword, setCurrentPassword] = useState(userData.password)
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [password, setPassword] = useState("")
+    const {register, formState: {errors}, handleSubmit} = useForm();
+    const {register: register2, formState: {errors: errors2}, handleSubmit: handleSubmit2} = useForm()
+    const {register: register3, formState: {errors: errors3}, handleSubmit: handleSubmit3} = useForm()
     const [bgColor, setBgColor] = useState(deepOrange[500]);
-    const [isDirty, setIsDirty] = useState(false);
+    const {...user} = JSON.parse(localStorage.getItem('user'));
     const [open, setOpen] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
     useEffect(() => {
       // generate a random color
       const randomColor = generateColors(deepOrange, deepPurple, blue);
@@ -65,146 +56,107 @@ export default function Profile({darkMode, toggleDarkMode}){
       setBgColor(randomColor);
     }, []);
 
-    const initials = getInitials(userData.full_name);
+    const initials = getInitials(user.full_name);
 
-    $(document).ready(function() {
-      $('#phone').mask('(000) 000-0000');
-   });
-
-    const handleClose = () => {
-      setOpen(false);
-    };
-
-    const countryChangeHandler = (event, value) => {
-      setIsDirty(true);
-      if (value) {
-        setCountry(value.label);
-      } else {
-        setCountry('');
-      }
-    };
-
-
-   async function updateInformation(e) {
-    e.preventDefault();
-    const formData = new FormData()
-    formData.append('userId', userId)
-    formData.append('firstName', firstName)
-    formData.append('lastName', lastName)
-    formData.append('email', email)
-    formData.append('country', country)
-    formData.append('gender', gender)
-    formData.append('phone', phone)
-    formData.append('date', birthday)
-    formData.append('updateInformation', "updateInformation")
-  
-    try {
-      const response = await axios.post('http://dashboard-adaptech.com/api/profile.php', formData)
-      const data = response.data
-      if(data.error){
-        swal('Error', `Error: ${data.error}`, 'error')
-      } else if (data.success){
-        setSuccessMessage(data.success)
-        setOpen(true)
-        setTimeout(() => {
-          navigate('/login')
-          setOpen(false)
-        }, 1500)
-      }
-    } catch (error) {
-      swal('Error', `Error: ${error}`, 'error');
-    }
-  }
-  
-  async function updatePassword(e){
-    e.preventDefault()
-    const passwordData = new FormData()
-    passwordData.append('userId', userId)
-    passwordData.append('password', password)
-    passwordData.append('updatePassword', "updatePassword")
-  
-    try {
-      const response = await axios.post('http://dashboard-adaptech.com/api/profile.php', passwordData)
-      const data = response.data
-  
-      if(data.error){
-        swal('Error', `Error: ${data.error}`, 'error')
-      } else if (data.success){
-        setSuccessMessage(data.success)
-        setOpen(true)
-        setTimeout(() => {
-          navigate('/login')
-          setOpen(false)
-        }, 1500)
-      }
-    } catch (err) {
-      swal('Error', `Error: ${err}`, 'error');
-    }
-  }
-  
-  async function deleteUser(user_id) {
-    try {
-      const response = await axios.delete(`http://dashboard-adaptech.com/api/profile.php?DeleteUser=${user_id}`);
-      const data = response.data;
-      if (data.error) {
-        swal('Error', `Error: ${data.error}`, 'error');
-      } else if (data.success) {
-        swal('Sorry to see you go!', data.success, 'info');
-        setTimeout(() => {
-          navigate("/")
-          swal.close()
-        }, 1500)
-      }
-    } catch (err) {
-      swal('Error', `Error: ${err}`, 'error');
-    }
-  }
-  
-    function handleDelete(user_id) {
-      swal({
-        title: "Confirm is you?",
-        text: "To make sure you are the owner of the account, you need to provide your password!",
-        icon: "warning",
-        dangerMode: true,
-        content: {
-          element: "input",
-          attributes: {
-            type: "password",
-            placeholder: "Enter your current password",
-          },
+    const handleInformationChange = (data) => {
+      $.ajax({
+        url: 'http://dashboard-adaptech.com/api/profile.php',
+        type: 'POST',
+        data: data,
+        success: function(data) {
+          toast.success(data.success);
+          setTimeout(() => {
+            navigate('/login')
+          }, 1500);
         },
-      }).then((password) => {
-        if (password !== currentPassword) {
-          swal("Error", "Invalid password", "error");
-          return;
+        error: function(error) {
+          toast.error(error);
         }
-        deleteUser(user_id);
       });
     }
 
+    const handlePasswordChange = (data) => {
+      $.ajax({
+        url: 'http://dashboard-adaptech.com/api/profile.php',
+        type: 'POST',
+        data: data,
+        success: function(data) {
+          if(data.error){
+            toast.error(data.error)
+          } else if(data.success){
+            toast.success(data.success);
+            setTimeout(() => {
+              navigate('/login')
+            }, 1500);
+          }
+        },
+        error: function(error) {
+          console.log(error)
+          toast.error(error);
+        }
+      });
+    }
+
+  async function handleDeleteUser(user_id) {
+    console.log(user_id)
+    try {
+      const response = await axios.get(`http://dashboard-adaptech.com/api/profile.php?user_id=${user_id}`);
+      const data = response.data;
+      if (data.error) {
+        toast.error(data.error);
+      } else if (data.success) {
+        toast.success(data.success);
+        setTimeout(() => {
+          navigate("/")
+        }, 1500)
+      }
+    } catch (err) {
+      swal('Error', `Error: ${err}`, 'error');
+    }
+  }
+  
+  function handleDelete(data) {
+    $.ajax({
+      url: "http://dashboard-adaptech.com/api/profile.php",
+      type: "POST",
+      data: data,
+      dataType: "json",
+      success: function (response) {
+        if (response.success) {
+          handleDeleteUser(data.user_id);
+        } else {
+          toast.error(response.error);
+        }
+      },
+      error: function (xhr, status, error) {
+        toast.error(error); // Display the error message from the API
+      },
+    });
+  }
+  
+  
     return (
         <Box>
-        {successMessage && <Snackbar open={open} autoHideDuration={1500} onClose={handleClose}>
-            <Alert onClose={handleClose} variant='filled' severity="success" sx={{ width: '100%' }}>
-                {successMessage}. For changes to take effect, you need to log in again!
-            </Alert>
-        </Snackbar>}
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={open}
-          onClick={handleClose}
-        >
-          <CircularProgress color="inherit" />
-        </Backdrop>
+        <ToastContainer
+          position="bottom-left"
+          autoClose={1500}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark" />
         <Box className="mx-auto p-8">
-          <Box className={darkMode ? "bg-zinc-700 text-white rounded-lg overflow-hidden py-8 px-4" : "bg-white shadow-lg rounded-lg overflow-hidden py-8 px-4"}>
+          <Box className={"bg-white shadow-lg rounded-lg overflow-hidden py-8 px-4"}>
             <Typography variant='h5' sx={{textAlign:'center', textTransform: 'uppercase'}}>Profile</Typography>
             <Box className="h-56 pt-8">
-              <Tooltip title={userData.full_name}>
+              <Tooltip title={user.full_name}>
                 <Avatar alt="#" src="#" className='mx-auto' sx={{ width: 150, height: 150, bgcolor: bgColor}}>{initials}</Avatar>
               </Tooltip>
             </Box>
-            <Box sx={{my:0.5}} component="form" name='profileForm' onSubmit={updateInformation}>
+            <Box sx={{my:0.5}} component="form" onSubmit={handleSubmit(handleInformationChange)}>
               <Accordion>
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
@@ -215,135 +167,52 @@ export default function Profile({darkMode, toggleDarkMode}){
                   </AccordionSummary>
                     <Divider />
                     <AccordionDetails sx={{my:2}}>
+                    <input type='hidden' {...register('user_id')} value={user.user_id} />
                     <Grid container spacing={3}>
                     <Grid item xs={12} sm={6}>
                       <TextField
-                        autoFocus
-                        required
-                        id="firstName"
-                        name="firstName"
                         label="First name"
                         fullWidth
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        autoComplete="first-name"
+                        defaultValue={user.first_name}
+                        {...register('firstName', {required: true})}
+                        aria-invalid={errors.firstName ? "true" : "false"}
                       />
+                      {errors.firstName?.type === "required" && (
+                         <p className='text-red-500 text-sm'>First Name is required</p>
+                      )}
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
-                        required
-                        id="lastName"
-                        name="lastName"
                         label="Last name"
                         fullWidth
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        autoComplete="last-name"
+                        defaultValue={user.last_name}
+                        {...register('lastName', {required: true})}
+                        aria-invalid={errors.firstName ? "true" : "false"}
                       />
+                      {errors.lastName?.type === "required" && (
+                         <p className='text-red-500 text-sm'>Last Name is required</p>
+                      )}
                     </Grid>
                     <Grid item xs={12}>
-                    <Tooltip arrow title="Replace with new email">
                       <TextField
-                        required
-                        id="email"
-                        name="email"
                         label="Email"
                         type="email"
                         fullWidth
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        autoComplete="email"
+                        defaultValue={user.email}
+                        {...register('email', {required: true})}
+                        aria-invalid={errors.email ? "true" : "false"}
                       />
-                    </Tooltip>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                    <Autocomplete
-                          id="country"
-                          options={countries}
-                          value={country}
-                          onChange={countryChangeHandler}
-                          autoHighlight
-                          isOptionEqualToValue={(option) => option.label || ""}
-                          renderOption={(props, option) => (
-                            <Box component="li" sx={{ '& > img': { mr: 2, flexShrink: 0 } }} {...props}>
-                              <img
-                                loading="lazy"
-                                width="20"
-                                src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
-                                srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
-                                alt=""
-                              />
-                              {option.label} ({option.code}) +{option.phone}
-                            </Box>
-                          )}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Choose a country"
-                              id="country"
-                              name="country"
-                              required
-                              fullWidth
-                              inputProps={{
-                                ...params.inputProps,
-                                autoComplete: 'new-password', // disable autocomplete and autofill
-                              }}
-                            />
-                          )}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth >
-                        <InputLabel id="demo-simple-select-label">Gender *</InputLabel>
-                        <Select
-                          labelId="demo-simple-select-label"
-                          id="gender"
-                          name="gender"
-                          value={gender}
-                          label="Gender *"
-                          onChange={(e) => {setGender(e.target.value)}}
-                        >
-                          <MenuItem value="Male">Male</MenuItem>
-                          <MenuItem value="Female">Female</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                    <TextField
-                        required
-                        fullWidth
-                        id="phone"
-                        name="phone"
-                        type="numeric"
-                        label="Phone"
-                        value={phone}
-                        onChange={(e) => {setPhone(e.target.value)}}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                    <TextField
-                        required
-                        fullWidth
-                        id="date"
-                        name="date"
-                        type="date"
-                        label="Birthday"
-                        value={birthday}
-                        onChange={(e) => {setBirthday(e.target.value)}}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Tooltip arrow title="To make sure you are the owner of the account, you need to provide your password to make changes happen">
-                        <TextField id="confirmPassForInfo" name='password' type="password" label="Current Password" fullWidth required value={confirmPassword} onChange={(e) => {setConfirmPassword(e.target.value); setIsDirty(true)}} />
-                      </Tooltip>
+                      {errors.email?.type === "required" && (
+                         <p className='text-red-500 text-sm'>Email is required</p>
+                      )}
                     </Grid>
                     </Grid>
-                    <Button sx={{mt:1}} disabled={!isDirty || confirmPassword !== currentPassword} variant="contained" type='submit'>Save Changes</Button>
+                    <Button sx={{mt:2}} variant="contained" type='submit'>Save Changes</Button>
                     </AccordionDetails>
                 </Accordion>
                 </Box>
                 <Divider />
-                <Box sx={{my:0.5}} component="form" name="updatePassword" onSubmit={updatePassword}>
+                <Box sx={{my:0.5}} component="form" onSubmit={handleSubmit2(handlePasswordChange)}>
                 <Accordion>
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
@@ -354,12 +223,30 @@ export default function Profile({darkMode, toggleDarkMode}){
                   </AccordionSummary>
                     <Divider />
                     <AccordionDetails>
-                      <TextField id='password' name='password' type="password" label="New Password" fullWidth required margin='normal' value={password} onChange={(e) => {setPassword(e.target.value); setIsDirty(true)}} />
-                      <Tooltip arrow title="To make sure you are the owner of the account, you need to provide your password to make changes happen">
-                        <TextField id="confirmPassForPass" name='password' type="password" label="Current Password" fullWidth required margin='normal' value={confirmPassword} onChange={(e) => {setConfirmPassword(e.target.value);setIsDirty(true)}} />
-                      </Tooltip>
-                      <Divider />
-                      <Button disabled={!isDirty || confirmPassword !== currentPassword} variant="contained" type='submit'>Save Changes</Button>
+                      <input type='hidden' {...register2('user_id')} value={user.user_id} />
+                      <TextField 
+                      type="password" 
+                      {...register2('currentPassword', {required: true})}
+                      aria-invalid={errors2.currentPassword ? "true" : "false"} 
+                      label="Current Password" 
+                      fullWidth
+                      margin='normal' 
+                      />
+                      {errors2.currentPassword?.type === "required" && (
+                         <p className='text-red-500 text-sm'>Current Password is required</p>
+                      )}
+                      <TextField 
+                      type="password" 
+                      {...register2('newPassword', {required: true})} 
+                      aria-invalid={errors2.newPassword ? "true" : "false"}
+                      label="New Password" 
+                      fullWidth 
+                      margin='normal' 
+                      />
+                      {errors2.newPassword?.type === "required" && (
+                         <p className='text-red-500 text-sm'>Password is required</p>
+                      )}
+                      <Button sx={{mt: 1}} variant="contained" type='submit'>Save Changes</Button>
                     </AccordionDetails>
                 </Accordion>
                 </Box>
@@ -375,28 +262,39 @@ export default function Profile({darkMode, toggleDarkMode}){
                   <Divider />
                   <AccordionDetails>
                     <Typography variant='body2'>Close account</Typography>
-                    <Typography>{userData.first_name}, we’re sorry to see you go</Typography>
-                    <Button sx={{mt:2}} variant='contained' onClick={() => handleDelete(userData.user_id)} startIcon={<DeleteIcon />}>Continue</Button>
+                    <Typography>{user.first_name}, we’re sorry to see you go</Typography>
+                    <Button sx={{mt: 2}} variant='contained' onClick={handleOpen}>Continue</Button>
+                    <Modal
+                      open={open}
+                      onClose={handleClose}
+                      aria-labelledby="modal-modal-title"
+                      aria-describedby="modal-modal-description"
+                    >
+                      <Box sx={style}>
+                        <Typography id="modal-modal-title" variant="h6" component="h2">
+                          Confirm if it's you
+                        </Typography>
+                        <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+                          To ensure you are the owner of the account, please provide your password.
+                        </Typography>
+                        <Box component="form" onSubmit={handleSubmit3(handleDelete)}>
+                          <input type='hidden' {...register3('user_id')} value={user.user_id} />
+                          <TextField 
+                          type='password' 
+                          label="Current Password" 
+                          margin='normal' 
+                          fullWidth 
+                          {...register3('password', {required: true})}
+                          aria-invalid={errors3.password ? "true" : "false"} />
+                          {errors3.password?.type === "required" && (
+                              <p className='text-red-500 text-sm'>Current Password is required</p>
+                          )}
+                          <Button variant='contained' type='submit' sx={{mt: 1}} startIcon={<DeleteIcon />}>Close account</Button>
+                        </Box>
+                      </Box>
+                    </Modal>
                   </AccordionDetails>
                 </Accordion>
-                <Divider />
-                <Box sx={{my:0.5}}>
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1a-content"
-                    id="panel1a-header"
-                    >
-                    {darkMode ? <NightlightIcon sx={{mr: 1}}/> : <LightModeIcon sx={{mr: 1}} />}<Typography>Display Mode</Typography>
-                  </AccordionSummary>
-                    <Divider />
-                    <AccordionDetails>
-                      <Typography>Choose how your Dashboard experience looks for this device.</Typography>
-                      <Typography variant='body2' sx={{mt:1}} color="text.secondary">Activate {darkMode ? "Light" : "Dark"} Mode:</Typography>
-                      <Switch onClick={toggleDarkMode} {...label} checked={darkMode} color='primary'/>
-                    </AccordionDetails>
-                </Accordion>
-                </Box>
           </Box>
         </Box>
       </Box> 

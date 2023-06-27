@@ -1,37 +1,40 @@
-import { useEffect, useState, useContext } from 'react';
-import { UserContext } from '../../../auth/UserContext';
+import { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { getPosts, deletePost, savePost } from '../../../api/posts';
+import { getPosts } from '../../../api/posts';
 import { getTimeElapsed } from '../../../utils';
 import { Link, useSearchParams } from "react-router-dom";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import swal from 'sweetalert';
+import axios from 'axios';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import { Button, 
-         IconButton, 
-         Tooltip, 
-         Pagination, 
-         Badge, 
-         Card, 
-         CardActions, 
-         CardContent, 
-         CardMedia, 
-         Typography, 
-         CardActionArea, 
-         Divider,
-         Box, 
-         InputLabel, 
-         MenuItem, 
-         FormControl, 
-         Select, 
-         Alert } from "@mui/material";
+import Button from "@mui/material/Button";
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Pagination from '@mui/material/Pagination';
+import Badge from '@mui/material/Badge';
+import Card from '@mui/material/Card';
+import CardActions from '@mui/material/CardActions';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
+import CardActionArea from '@mui/material/CardActionArea';
+import Divider from '@mui/material/Divider';
+import Box from '@mui/material/Box';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+import Alert from '@mui/material/Alert';
+import Container from '@mui/material/Container';
 
 export default function Posts({darkMode}) {
   const [posts, setPosts] = useState([]);
-  const {userData} = useContext(UserContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,10 +48,56 @@ export default function Posts({darkMode}) {
     .catch(error => console.error(error));
   }, [])
   
-  function editPost(post_id){
+  function handleEditPost(post_id){
   const selectedPost = posts.find(post => post.post_id === post_id)
   navigate('/dashboard/createpost', {state: selectedPost})
   }
+
+  async function handleDeletePost(post_id) {
+    swal({
+      title: "Are you sure?",
+      text: "Once deleted, you will not be able to recover this post!",
+      icon: "warning",
+      buttons: ["Cancel", "Delete"],
+      dangerMode: true,
+    })
+    .then(async (willDelete) => {
+      if (willDelete) {
+        try {
+          const response = await axios.get(`http://dashboard-adaptech.com/api/posts.php?post_id=${post_id}`);
+          const { data } = response;
+          if (data.error) {
+            toast.error(data.error);
+          } else if (data.success) {
+            toast.success(data.success);
+            setPosts(prevPosts => prevPosts.filter(post => post.post_id !== post_id));
+          }
+        } catch (error) {
+          toast.error(error);
+        }
+      }
+    });
+  }  
+  
+    function handleSavePost(post_id) {
+      const savedPost = new FormData();
+      const {user_id} = JSON.parse(localStorage.getItem('user'));
+      savedPost.append('post_id', post_id);
+      savedPost.append('user_id', user_id);
+      savedPost.append('setBookmark', 'setBookmark')
+      
+      axios.post('http://dashboard-adaptech.com/api/bookmarks.php', savedPost)
+      .then((response) => {
+        if (response.data.error) {
+          toast.error(response.data.error);
+        } else if (response.data.success) {
+          toast.success(response.data.success);
+        }
+      })
+      .catch((error) => {
+        toast.error(error);
+      });
+  }   
 
   function handleFilterChange(key, value) {
     setSearchParams(prevParams => {
@@ -123,17 +172,17 @@ export default function Posts({darkMode}) {
         <Divider />
         <CardActions>
           <Tooltip title="Edit" arrow>
-            <IconButton aria-label="edit" onClick={() => editPost(item.post_id)}>
+            <IconButton aria-label="edit" onClick={() => handleEditPost(item.post_id)}>
               <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete" arrow>
-            <IconButton aria-label="delete" onClick={() => deletePost(item.post_id, setPosts)}>
+            <IconButton aria-label="delete" onClick={() => handleDeletePost(item.post_id)}>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
           <Tooltip arrow>
-            <IconButton aria-label="bookmark" onClick={() => savePost(item, userData.user_id)}>
+            <IconButton aria-label="bookmark" onClick={() => handleSavePost(item.post_id)}>
               <BookmarkBorderIcon />
             </IconButton>
           </Tooltip>
@@ -151,6 +200,17 @@ export default function Posts({darkMode}) {
 
   return (
     <Box>
+        <ToastContainer
+          position="bottom-left"
+          autoClose={1500}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark" />
         <Box sx={{textAlign: 'center'}} >
           <Typography sx={{mt:4, mb:2, textTransform: 'uppercase'}} variant='h5'>List of posts</Typography>
           <Badge badgeContent={posts.length} color="secondary">
@@ -227,7 +287,9 @@ export default function Posts({darkMode}) {
                   </Box>
               </Box>
               <Box>
+                <Container maxWidth="md">
                   <Alert sx={{mx: 2, justifyContent: 'center'}} severity="info">{typeFilter ? "Unfortunately, we did not find any posts that match the selected filter. Please try clearing the filter to see more options." : "It seems like you haven't created any posts yet, but don't worry! You can easily create one by clicking the Create New Post button and filling out the text fields with whatever you'd like to share."}</Alert>
+                </Container>
               </Box>
             </Box>
           )

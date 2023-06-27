@@ -1,5 +1,4 @@
 import axios from "axios";
-import swal from "sweetalert";
 
 async function getBookmarks(user_id) {
     try {
@@ -23,22 +22,4 @@ async function getBookmarks(user_id) {
     }
   }
   
-  async function bookmarkRemove(post, userData, setSavedPosts) {
-    const { post_id } = post;
-    try {
-      const response = await axios.get(`http://dashboard-adaptech.com/api/bookmarks.php?removeBookmark=${post_id}&user_id=${userData.user_id}`);
-      const { data } = response;
-      if (data.error) {
-        swal('Error', `Error: ${data.error}`, 'error');
-      } else if (data.success) {
-        swal('Success', `Success: ${data.success}`, 'success');
-        setSavedPosts(prevSavedPosts =>
-          prevSavedPosts.filter(savedPost => savedPost.post_id !== post_id)
-        );
-      }
-    } catch (error) {
-      console.error(`Error removing post: ${error}`);
-    }
-  }
-
-  export {getBookmarks, getSavedPosts, bookmarkRemove}
+  export {getBookmarks, getSavedPosts}

@@ -1,47 +1,79 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { UserContext } from '../../auth/UserContext';
-import { getBookmarks, getSavedPosts, bookmarkRemove } from "../../api/bookmarks";
+import { getBookmarks, getSavedPosts } from "../../api/bookmarks";
 import { getTimeElapsed } from "../../utils";
+import axios from "axios";
 import BookmarkRemoveIcon from '@mui/icons-material/BookmarkRemove';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { CardActionArea, 
-         Divider, 
-         IconButton, 
-         Tooltip, 
-         Button, 
-         Card, 
-         CardActions, 
-         CardContent, 
-         CardMedia, 
-         CssBaseline, 
-         Grid, 
-         Box, 
-         Typography, 
-         Container, 
-         Alert } from "@mui/material";
-        
+import CardActionArea from '@mui/material/CardActionArea';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardActions from '@mui/material/CardActions';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+import CssBaseline from '@mui/material/CssBaseline';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import Typography from "@mui/material/Typography";
+import Container from '@mui/material/Container';
+import Alert from '@mui/material/Alert';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const defaultTheme = createTheme();
 
 export default function Bookmarks() {
-const {userData} = useContext(UserContext);
-const [bookmarks, setBookmarks] = useState([]);
-const [savedPosts, setSavedPosts] = useState([]);
+  const [bookmarks, setBookmarks] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
 
-useEffect(() => {
-  getBookmarks(userData.user_id)
-    .then(data => setBookmarks(data))
-    .catch(error => console.error(error));
-}, []);
+  const {user_id} = JSON.parse(localStorage.getItem('user'))
 
-useEffect(() => {
-  getSavedPosts(bookmarks)
-    .then(data => setSavedPosts(data))
-    .catch(error => console.error(error));
-}, [bookmarks]);
+  useEffect(() => {
+    getBookmarks(user_id)
+      .then(data => setBookmarks(data))
+      .catch(error => console.error(error));
+  }, []);
+
+  useEffect(() => {
+    getSavedPosts(bookmarks)
+      .then(data => setSavedPosts(data))
+      .catch(error => console.error(error));
+  }, [bookmarks]);
+
+  async function handleBookmarkRemove(post_id) {
+    const {user_id} = JSON.parse(localStorage.getItem('user'));
+    try {
+      const response = await axios.get(`http://dashboard-adaptech.com/api/bookmarks.php?post_id=${post_id}&user_id=${user_id}`);
+      const { data } = response;
+      if (data.error) {
+        toast.error(data.error);
+      } else if (data.success) {
+        toast.success(data.success);
+        setSavedPosts(prevSavedPosts =>
+          prevSavedPosts.filter(savedPost => savedPost.post_id !== post_id)
+        );
+      }
+    } catch (error) {
+      toast.error(error);
+    }
+  }
 
   return ( 
     <ThemeProvider theme={defaultTheme}>
+      <ToastContainer
+      position="bottom-left"
+      autoClose={1500}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="dark" />
       <CssBaseline />
       <main>
         <Box
@@ -61,7 +93,8 @@ useEffect(() => {
           </Container>
         </Box>
         <Container sx={{ py: 8 }} maxWidth="md">
-        {savedPosts?.length ? <Grid container spacing={4}>
+        {savedPosts?.length ? 
+        <Grid container spacing={4}>
             {savedPosts.map((post) => (
               <Grid item key={post.post_id} xs={12} sm={6} md={4}>
                 <Card
@@ -92,7 +125,7 @@ useEffect(() => {
                     <Button size="small">{getTimeElapsed(post.createdAt)}</Button>
                     <Box sx={{ml: 'auto'}}>
                     <Tooltip arrow title="Unsave">
-                    <IconButton onClick={() => bookmarkRemove(post, userData, setSavedPosts)}>
+                    <IconButton onClick={() => handleBookmarkRemove(post.post_id)}>
                       <BookmarkRemoveIcon />
                     </IconButton>
                     </Tooltip>
