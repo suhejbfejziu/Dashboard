@@ -1,38 +1,55 @@
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import useAuthStore from "../authStore";
+
 export default function Home() {
+  const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
+  const isLoggedIn = useAuthStore((state) => state.isAuthenticated)
+
+  useEffect(() => {
+    async function handleAuthentication() {
+       await checkAuthentication();
+    }
+
+    handleAuthentication();
+  }, []);
   return (
-    <>
+    <div>
     <section className="items-center justify-center bg-[#141521] flex h-screen">
-      <div className="relative items-center w-full px-5 py-12 mx-auto lg:px-16 max-w-7xl md:px-12">
+      <div className="items-center w-full px-5 py-12 mx-auto lg:px-16 max-w-7xl md:px-12">
         <div className="max-w-3xl mx-auto text-center">
           <div>
-            <span className="w-auto px-6 py-3 rounded-full bg-white/5"><span className="tewxt-sm font-medium text-[#50d236]">Acquire your first customer</span></span>
+            <span className="w-auto px-6 py-3 rounded-full bg-white/5">
+              <span className="text-sm font-medium text-white">Acquire your first customer</span>
+            </span>
             <p className="mt-8 text-3xl font-extrabold tracking-tight text-white lg:text-6xl">
-              Create landing pages
-              <span className="md:block">your audience will love</span>
+              The Dashboard features your audience will love
             </p>
             <p className="max-w-xl mx-auto mt-8 text-base lg:text-xl text-slate-300">
-              Effortlessly create, pitch, and validate your early-stage business
-              with our no-code landing page builder.
+              Welcome to our website that is designed to help you manage your users, posts, comments and profile in an easy and efficient way.
             </p>
           </div>
           <div className="flex flex-col justify-center max-w-sm gap-3 mx-auto mt-10 sm:flex-row">
-            <a href="#" className="text-white focus:outline-none inline-flex items-center justify-center rounded-xl bg-[#279f0e] duration-200 focus-visible:outline-black focus-visible:ring-black font-medium hover:bg-transparent hover:border-white hover:text-white lg:w-auto px-6 py-3 text-center w-full">Sign up for free</a>
+          <ButtonGroup variant="outlined" aria-label="outlined button group">
+            { isLoggedIn ? "" : <Button sx={{color: 'white'}} LinkComponent={Link} to={"/sign-up"}>Sign up for free</Button>}
+            <Button sx={{color: 'white'}} LinkComponent={Link} to={"/posts"}>Check out posts</Button>
+          </ButtonGroup>
           </div>
         </div>
       </div>
     </section>
     <section className="bg-white">
-    <div className="relative items-center w-full px-5 pt-24 mx-auto md:px-12 lg:px-16 max-w-7xl lg:py-24">
+    <div className="items-center w-full px-5 pt-24 mx-auto md:px-12 lg:px-16 max-w-7xl lg:py-24">
       <div>
         <div className="max-w-2xl">
           <p className="text-2xl font-medium tracking-tight text-black sm:text-4xl">
-            I am a slightly longer heading that the others and I am align to the
-            left
+            Effortlessly Manage Your Online Presence with Our User-Friendly Platform
           </p>
           <p className="max-w-2xl mt-4 text-lg tracking-tight text-gray-600">
-            We all make mistakes, have struggles, and even regret things in our
-            past. But you are not your mistakes, you are not your struggles, and
-            you are here NOW with the power to shape your day and your future
+            With our powerful tools and intuitive interface, you can easily manage your users, moderate comments, and create engaging posts that will keep your audience coming back for more. 
+            Whether you're a seasoned blogger or just starting out, our website has everything you need to take your online presence to the next level. So why wait? Sign up today and start managing your online presence like a pro!
           </p>
         </div>
       </div>
@@ -166,34 +183,34 @@ export default function Home() {
     </div>
   </section>
   <section>
-      <div className="relative items-center w-full px-5 py-12 mx-auto md:px-12 lg:px-16 max-w-7xl">
-        <div className="text-center">
-          <h1 className="text-lg font-medium leading-6 text-black uppercase within 500 fortune companies">
-            Worldwide trust within 500 fortune companies
-          </h1>
+  <div className="items-center w-full px-5 py-12 mx-auto md:px-12 lg:px-16 max-w-7xl">
+    <div className="text-center">
+      <h1 className="text-lg font-medium leading-6 text-black uppercase within 500 fortune companies">
+        Worldwide trust within 500 fortune companies
+      </h1>
+     </div>
+      <div className="grid grid-cols-2 gap-0.5 md:grid-cols-6 pt-6">
+        <div className="flex justify-center col-span-1 px-8">
+          <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/2a4d2cdd794587314ad2034778712608ac32e37c/79f3b/images/logos/8.svg" alt="logo" />
         </div>
-            <div className="grid grid-cols-2 gap-0.5 md:grid-cols-6 pt-6">
-              <div className="flex justify-center col-span-1 px-8">
-                <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/2a4d2cdd794587314ad2034778712608ac32e37c/79f3b/images/logos/8.svg" alt="logo" />
-              </div>
-              <div className="flex justify-center col-span-1 px-8">
-                <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/aae3d6dfaee9138c485f5305dd33b7f80379edb4/64dd2/images/logos/2.svg" alt="logo" />
-              </div>
-              <div className="flex justify-center col-span-1 px-8">
-                <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/4dc5df63255f9f0c1f54c804dd3149cf11308507/b7a70/images/logos/3.svg" alt="logo" />
-              </div>
-              <div className="flex justify-center col-span-1 px-8">
-                <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/be7130b04bb6b932ed9222877a5e9146d80c0eba/6511d/images/logos/4.svg" alt="logo" />
-              </div>
-              <div className="flex justify-center col-span-1 px-8">
-                <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/456c999508e76cd199714cfa4fad3826ebb02216/9147b/images/logos/5.svg" alt="logo" />
-              </div>
-              <div className="flex justify-center col-span-1 px-8">
-                <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/b5d09ea7476a226d10dd1235e071288761e51da7/e68ac/images/logos/6.svg" alt="logo" />
-              </div>
-            </div>
+        <div className="flex justify-center col-span-1 px-8">
+          <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/aae3d6dfaee9138c485f5305dd33b7f80379edb4/64dd2/images/logos/2.svg" alt="logo" />
+        </div>
+        <div className="flex justify-center col-span-1 px-8">
+          <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/4dc5df63255f9f0c1f54c804dd3149cf11308507/b7a70/images/logos/3.svg" alt="logo" />
+        </div>
+        <div className="flex justify-center col-span-1 px-8">
+          <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/be7130b04bb6b932ed9222877a5e9146d80c0eba/6511d/images/logos/4.svg" alt="logo" />
+        </div>
+        <div className="flex justify-center col-span-1 px-8">
+          <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/456c999508e76cd199714cfa4fad3826ebb02216/9147b/images/logos/5.svg" alt="logo" />
+        </div>
+        <div className="flex justify-center col-span-1 px-8">
+          <img className="max-h-12" src="https://d33wubrfki0l68.cloudfront.net/b5d09ea7476a226d10dd1235e071288761e51da7/e68ac/images/logos/6.svg" alt="logo" />
+        </div>
       </div>
-    </section>        
-    </>
+      </div>
+    </section>
+    </div>
   );
 }

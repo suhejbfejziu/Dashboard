@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from "react-router-dom";
-import { getPosts } from '../../../api/posts';
+import { getAllPosts } from '../../../api/posts';
 import { getTimeElapsed } from '../../../utils';
 import { Link, useSearchParams } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
@@ -10,14 +9,11 @@ import axios from 'axios';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import Button from "@mui/material/Button";
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Pagination from '@mui/material/Pagination';
-import Badge from '@mui/material/Badge';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
@@ -31,19 +27,30 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import Alert from '@mui/material/Alert';
-import Container from '@mui/material/Container';
+import useUserStore from '../../../userStore';
+import useAuthStore from '../../../authStore';
 
-export default function Posts({darkMode}) {
+export default function Posts() {
   const [posts, setPosts] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [category, setCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const navigate = useNavigate()
   const typeFilter = searchParams.get("category")
+  const user = useUserStore((state) => state.user);
+  const isLoggedIn = useAuthStore((state) => state.isAuthenticated)
+  const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
+  
+  useEffect(() => {
+    async function handleAuthentication() {
+      await checkAuthentication();
+    }
+
+    handleAuthentication();
+  }, []);
 
   useEffect(() => {
-    getPosts()
+    getAllPosts()
     .then(data => setPosts(data))
     .catch(error => console.error(error));
   }, [])
@@ -64,7 +71,7 @@ export default function Posts({darkMode}) {
     .then(async (willDelete) => {
       if (willDelete) {
         try {
-          const response = await axios.get(`http://dashboard-adaptech.com/api/posts.php?post_id=${post_id}`);
+          const response = await axios.post(`http://dashboard-adaptech.com/api/posts.php?delete_post=${post_id}`);
           const { data } = response;
           if (data.error) {
             toast.error(data.error);
@@ -79,52 +86,70 @@ export default function Posts({darkMode}) {
     });
   }  
   
-    function handleSavePost(post_id) {
-      const savedPost = new FormData();
-      const {user_id} = JSON.parse(localStorage.getItem('user'));
-      savedPost.append('post_id', post_id);
-      savedPost.append('user_id', user_id);
-      savedPost.append('setBookmark', 'setBookmark')
-      
-      axios.post('http://dashboard-adaptech.com/api/bookmarks.php', savedPost)
-      .then((response) => {
-        if (response.data.error) {
-          toast.error(response.data.error);
-        } else if (response.data.success) {
-          toast.success(response.data.success);
-        }
-      })
-      .catch((error) => {
-        toast.error(error);
-      });
+  function handleSavePost(post_id) {
+    const savedPost = new FormData();
+    savedPost.append('post_id', post_id);
+    savedPost.append('user_id', user.user_id);
+    
+    axios.post('http://dashboard-adaptech.com/api/bookmarks.php', savedPost)
+    .then((response) => {
+      if (response.data.error) {
+        toast.error(response.data.error);
+      } else if (response.data.success) {
+        const successMessage = (
+          <span>
+            {response.data.success}{' '}
+            <Link className='underline' to="/dashboard/bookmarks">Go to Bookmarks</Link>
+          </span>
+        );
+        toast.success(successMessage);
+      }
+    })
+    .catch((error) => {
+      toast.error(error);
+    });
   }   
 
   function handleFilterChange(key, value) {
     setSearchParams(prevParams => {
-        if (value === null) {
-            prevParams.delete(key)
-        } else {
-            prevParams.set(key, value)
-        }
-        return prevParams
-    })
-}
+      if (value === null) {
+        prevParams.delete(key);
+      } else {
+        prevParams.set(key, value); // Include the value parameter
+      }
+      return prevParams;
+    });
+    setCategory(value)
+  }
+
+  const uniqueCategories = [...new Set(posts.map(post => post.category_id))];
+// Update this part
+  const categoryItems = uniqueCategories.map((categoryId) => {
+    const categoryName = posts.find((post) => post.category_id === categoryId)?.category_name || '';
+    const numPosts = posts.filter((post) => post.category_id === categoryId).length;
+    return (
+      <MenuItem key={categoryId} value={categoryName}>
+        {categoryName} ({numPosts})
+      </MenuItem>
+    );
+  });
+    
+// Update this line
+  const displayedPosts = searchParams.get('category')
+    ? posts.filter((post) => post.category_name === searchParams.get('category'))
+    : posts;
 
   const handlePageClick = (pageNumber) => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const displayedPosts = searchParams.get("category")
-  ? posts.filter(post => post.category_name === searchParams.get("category"))
-  : posts;
   
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentPosts = displayedPosts.slice(indexOfFirstItem, indexOfLastItem);
   
   const pageNumbers = [];
-
+  
   for (let i = 1; i <= Math.ceil(posts.length / itemsPerPage); i++) {
     pageNumbers.push(i);
   }
@@ -132,22 +157,11 @@ export default function Posts({darkMode}) {
   const renderPageNumbers = (
     <Pagination count={Math.ceil(posts.length / itemsPerPage)} color="primary" onChange={(event, value) => handlePageClick(value)} />
     );
-
-    const uniqueCategories = [...new Set(posts.map(post => post.category_name))];
-
-    const categoryItems = uniqueCategories.map(category => {
-      const numPosts = posts.filter(post => post.category_name === category).length;
-      return (
-        <MenuItem key={category} value={category}>
-          {category} ({numPosts})
-        </MenuItem>
-      );
-    });
     
   const postsEl = currentPosts.map((item) => {
     return (
       <Card key={item.post_id} sx={{ maxWidth: 345 }}>
-        <CardActionArea component={Link} to={`/dashboard/post/${item.post_id}`}>
+        <CardActionArea component={Link} to={`/post/${item.post_id}`}>
         <CardMedia
           component="div"
           sx={{
@@ -161,16 +175,17 @@ export default function Posts({darkMode}) {
               {item.title.length > 15 ? item.title.substring(0, 25) + "..." : item.title}
             </Typography>
             <Typography className="break-all" gutterBottom variant="body2" color="text.secondary">
-              {item.body.length > 25 ? item.body.substring(0, 50) + "..." : item.body}
+              {item.description.length > 25 ? item.description.substring(0, 50) + "..." : item.description}
             </Typography>
             <Typography gutterBottom variant="body2" color="text.secondary">
               {item.category_name}
             </Typography>
-            <Button variant="contained">Read more</Button>
+            <Button variant="outlined">Read more...</Button>
           </CardContent>
         </CardActionArea>
         <Divider />
-        <CardActions>
+        { isLoggedIn ? 
+          <CardActions>
           <Tooltip title="Edit" arrow>
             <IconButton aria-label="edit" onClick={() => handleEditPost(item.post_id)}>
               <EditIcon />
@@ -186,114 +201,90 @@ export default function Posts({darkMode}) {
               <BookmarkBorderIcon />
             </IconButton>
           </Tooltip>
-          <Box className="ml-auto text-center">
-              <Box sx={{display: 'flex', flexWrap:'wrap'}}>
-                <Tooltip arrow title="Published by">
-                  <Typography gutterBottom variant="body2" color="text.secondary">{item.author_name} {getTimeElapsed(item.createdAt)}</Typography>
-                </Tooltip>
-              </Box>
+          </CardActions> : ""
+        }
+          <Box sx={{textAlign: 'center', my: 1}}>
+            <Tooltip arrow title="Posted">
+              <Typography gutterBottom variant="body2" color="text.secondary">{getTimeElapsed(item.createdAt)}</Typography>
+            </Tooltip>
           </Box>
-        </CardActions>
       </Card>
     );
   });
 
   return (
     <Box>
-        <ToastContainer
-          position="bottom-left"
-          autoClose={1500}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark" />
-        <Box sx={{textAlign: 'center'}} >
-          <Typography sx={{mt:4, mb:2, textTransform: 'uppercase'}} variant='h5'>List of posts</Typography>
-          <Badge badgeContent={posts.length} color="secondary">
-            <Link to='/dashboard/createpost'>
-              <Button variant="contained">Create new post <PostAddIcon sx={{ml: 0.5}}/></Button>
-            </Link>
-          </Badge>
-        </Box>
-      { displayedPosts?.length ? 
-      (
-          <Box className="mb-8">
-            <Typography sx={{ml: 2, mb: 1, textTransform: 'uppercase'}} variant="body2" color={darkMode ? "white" : "text.secondary"}>Filter by Categories <FilterAltIcon /></Typography>
-            <Box sx={{display: 'flex', alignItems: 'center', mb: 4}}>
-                <Box>
-                <FormControl sx={{minWidth: 160, mx: 2}}>
-                  <InputLabel id="demo-simple-select-label">Categories</InputLabel>
-                  <Select
-                    value={typeFilter || ''}
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    label="Categories"
-                    onChange={event => handleFilterChange('category', event.target.value)}
-                  >
-                    <MenuItem value="">
-                      <em>All categories</em>
-                    </MenuItem>
-                    {categoryItems}
-                  </Select>
-                </FormControl>
-                </Box>
-                <Box>
-                  {typeFilter ? (
-                      <Button variant="contained"
-                        onClick={() => {setCategory(''); handleFilterChange("category", null)}}
-                      >Clear filter</Button>
-                  ) : null}
-                </Box>
-            </Box>
-            <section className="flex justify-center flex-wrap gap-5">
-              {postsEl}
-            </section>
-            <ul className="flex justify-center my-6">
-              {renderPageNumbers}
-            </ul>
-        </Box>
-          ) :
-          (
-            <Box>
-              <Typography sx={{ml: 2, mb: 1}} variant="body2" color="text.secondary">Filter by Categories <FilterAltIcon /></Typography>
-              <Box sx={{display: 'flex', alignItems: 'center', mb: 4}}>
-                  <Box>
-                  <FormControl sx={{minWidth: 160, mx: 2}}>
-                    <InputLabel id="demo-simple-select-label">Categories</InputLabel>
+      <ToastContainer
+        position="bottom-left"
+        autoClose={1500}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark" />
+        <section className="bg-gray-50 dark:bg-gray-900 mt-6 mb-12 flex items-center">
+          <div className="max-w-screen-xl px-4 mx-auto lg:px-12 w-full">
+          <Typography sx={{ mt: 2, mb: 2, textTransform: 'uppercase', textAlign: 'center' }} variant='h5'>Posts</Typography>
+            <div className="relative bg-white shadow-md dark:bg-gray-800 sm:rounded-lg">
+              <div className="flex flex-col items-center justify-between p-4 space-y-3 md:flex-row md:space-y-0 md:space-x-4">
+                <div className="w-full md:w-1/2">
+                  <form className="flex items-center">
+                    <label htmlFor="simple-search" className="sr-only">Search</label>
+                    <div className="relative w-full">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg aria-hidden="true" className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <input type="text" id="simple-search" className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Search" required="" />
+                    </div>
+                  </form>
+                </div>
+                <div className="flex flex-col items-stretch justify-end flex-shrink-0 w-full space-y-2 md:w-auto md:flex-row md:space-y-0 md:items-center md:space-x-3">
+                  {isLoggedIn ? 
+                  <Link to='/dashboard/createpost'>
+                  <Button variant='contained'>
+                    <PostAddIcon sx={{mr: 0.5}}/>Create new post 
+                  </Button>
+                  </Link> : ""
+                  }
+                  <div className="flex items-center w-full space-x-3 md:w-auto">
+                  <FormControl sx={{width: 140}}>
+                    <InputLabel id="demo-simple-select-label">Filter</InputLabel>
                     <Select
-                      value={typeFilter || ''}
+                      value={category || ''} // Update the value prop
                       labelId="demo-simple-select-label"
                       id="demo-simple-select"
-                      label="Categories"
+                      label="Filter"
                       onChange={event => handleFilterChange('category', event.target.value)}
                     >
-                      <MenuItem value="">
-                        <em>All categories</em>
-                      </MenuItem>
                       {categoryItems}
                     </Select>
                   </FormControl>
-                  </Box>
                   <Box>
                     {typeFilter ? (
-                        <Button variant="contained"
+                        <Button variant="outlined"
                           onClick={() => {setCategory(''); handleFilterChange("category", null)}}
                         >Clear filter</Button>
                     ) : null}
                   </Box>
-              </Box>
-              <Box>
-                <Container maxWidth="md">
-                  <Alert sx={{mx: 2, justifyContent: 'center'}} severity="info">{typeFilter ? "Unfortunately, we did not find any posts that match the selected filter. Please try clearing the filter to see more options." : "It seems like you haven't created any posts yet, but don't worry! You can easily create one by clicking the Create New Post button and filling out the text fields with whatever you'd like to share."}</Alert>
-                </Container>
-              </Box>
-            </Box>
-          )
-      }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <Box className="m-4">
+          <section className="flex justify-center flex-wrap gap-5">
+            {postsEl?.length ? postsEl : <Alert severity='warning'>No posts found!</Alert>}
+          </section>
+          <ul className="flex justify-center my-6">
+            {renderPageNumbers}
+          </ul>
+      </Box>
     </Box>
   );
 }

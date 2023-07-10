@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getBookmarks, getSavedPosts } from "../../api/bookmarks";
 import { getTimeElapsed } from "../../utils";
 import axios from "axios";
@@ -22,17 +22,31 @@ import Container from '@mui/material/Container';
 import Alert from '@mui/material/Alert';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import useUserStore from "../../userStore";
+import useAuthStore from "../../authStore";
 
 const defaultTheme = createTheme();
 
 export default function Bookmarks() {
   const [bookmarks, setBookmarks] = useState([]);
   const [savedPosts, setSavedPosts] = useState([]);
+  const navigate = useNavigate();
+  const user = useUserStore((state) => state.user);
+  const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
+  
+  useEffect(() => {
+    async function handleAuthentication() {
+      const isAuthenticated = await checkAuthentication();
+      if (!isAuthenticated) {
+        navigate("/login");
+    }
+    }
 
-  const {user_id} = JSON.parse(localStorage.getItem('user'))
+    handleAuthentication();
+  }, []);
 
   useEffect(() => {
-    getBookmarks(user_id)
+    getBookmarks(user.user_id)
       .then(data => setBookmarks(data))
       .catch(error => console.error(error));
   }, []);
@@ -44,9 +58,8 @@ export default function Bookmarks() {
   }, [bookmarks]);
 
   async function handleBookmarkRemove(post_id) {
-    const {user_id} = JSON.parse(localStorage.getItem('user'));
     try {
-      const response = await axios.get(`http://dashboard-adaptech.com/api/bookmarks.php?post_id=${post_id}&user_id=${user_id}`);
+      const response = await axios.get(`http://dashboard-adaptech.com/api/bookmarks.php?post_id=${post_id}&user_id=${user.user_id}`);
       const { data } = response;
       if (data.error) {
         toast.error(data.error);
@@ -83,10 +96,11 @@ export default function Bookmarks() {
         >
           <Container maxWidth="sm">
             <Typography
-              variant="h4"
+              variant="h5"
               align="center"
               color="text.primary"
               gutterBottom
+              sx={{textTransform: "uppercase"}}
             >
               Saved Posts
             </Typography>
@@ -100,7 +114,7 @@ export default function Bookmarks() {
                 <Card
                   sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                 >
-                  <CardActionArea component={Link} to={`/dashboard/post/${post.post_id}`}>
+                  <CardActionArea component={Link} to={`/post/${post.post_id}`}>
                   <CardMedia
                     component="div"
                     sx={{
@@ -114,14 +128,13 @@ export default function Bookmarks() {
                     {post.title.length > 15 ? post.title.substring(0, 25) + "..." : post.title}
                     </Typography>
                     <Typography sx={{wordBreak: 'break-all'}} variant="subtitle1" gutterBottom>
-                    {post.body.length > 25 ? post.body.substring(0, 50) + "..." : post.body}
+                    {post.description.length > 25 ? post.description.substring(0, 50) + "..." : post.description}
                     </Typography>
-                    <Typography variant="body2">{post.category_name}</Typography>
+                    <Button variant="outlined">Read more...</Button>
                   </CardContent>
                   </CardActionArea>
                   <Divider />
                   <CardActions>
-                    <Button size="small">{post.author_name}</Button>
                     <Button size="small">{getTimeElapsed(post.createdAt)}</Button>
                     <Box sx={{ml: 'auto'}}>
                     <Tooltip arrow title="Unsave">
@@ -138,7 +151,7 @@ export default function Bookmarks() {
             <Box>
               <Alert severity="info">It looks like you don't have any posts saved on your bookmarks yet. Don't worry, you can start bookmarking posts by clicking the bookmark icon on any post you find interesting or useful. Then, you can easily access them later by going to your bookmarks tab. Happy bookmarking!</Alert>
               <Box sx={{textAlign: 'center'}}>
-                <Button component={Link} to="/dashboard/posts" variant="contained" sx={{mt:1.5}}>Go to posts</Button>
+                <Button component={Link} to="/posts" variant="contained" sx={{mt:2}}>Go to posts</Button>
               </Box>
             </Box> }
         </Container>

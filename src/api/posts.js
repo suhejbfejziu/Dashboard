@@ -1,8 +1,8 @@
 import axios from "axios";
 
-async function getPosts() {
+async function getAllPosts() {
     try {
-      const res = await axios.get('http://dashboard-adaptech.com/api/posts.php?posts');
+      const res = await axios.get('http://dashboard-adaptech.com/api/getPosts.php?posts');
       const data = await res.data;
       return data;
     } catch (error) {
@@ -10,9 +10,9 @@ async function getPosts() {
     }
   }
   
-  async function getPost(params_id) {
+  async function getPosts(params_id) {
     try {
-      const response = await fetch(`http://dashboard-adaptech.com/api/posts.php?post=${params_id}`);
+      const response = await fetch(`http://dashboard-adaptech.com/api/getPosts.php?post=${params_id}`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -30,4 +30,4 @@ async function getPosts() {
     }
 }
 
-export {getPosts, getPost, getCategories}
+export {getAllPosts, getPosts, getCategories}

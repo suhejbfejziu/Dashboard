@@ -1,7 +1,9 @@
 export default function DashboardFooter() {
     return (
-        <footer className="bg-[#1976d2] text-white h-20 flex shrink-0 justify-center items-center mt-auto font-medium">
-            &#169; {new Date().getFullYear()} #DASHBOARD
-        </footer>
+      <footer className="bg-gray-100 shadow sm:flex sm:items-center sm:justify-between p-4 sm:p-6 xl:p-8 dark:bg-gray-800">
+        <p className="mb-4 text-sm text-center text-gray-500 dark:text-gray-400 sm:mb-0">
+            &copy; 2023 <a href="#" className="hover:underline" target="_blank">Userconnectivity.com</a>. All rights reserved.
+        </p>
+      </footer>         
     )
 }

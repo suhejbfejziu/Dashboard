@@ -24,6 +24,8 @@ import { useForm } from 'react-hook-form';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Modal from '@mui/material/Modal';
+import useUserStore from '../../userStore';
+import useAuthStore from '../../authStore';
 
 const style = {
   position: 'absolute',
@@ -38,67 +40,79 @@ const style = {
 };
 
 export default function Profile(){
-    const navigate = useNavigate();
-    const {register, formState: {errors}, handleSubmit} = useForm();
-    const {register: register2, formState: {errors: errors2}, handleSubmit: handleSubmit2} = useForm()
-    const {register: register3, formState: {errors: errors3}, handleSubmit: handleSubmit3} = useForm()
-    const [bgColor, setBgColor] = useState(deepOrange[500]);
-    const {...user} = JSON.parse(localStorage.getItem('user'));
-    const [open, setOpen] = useState(false);
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
+  const navigate = useNavigate();
+  const {register, formState: {errors}, handleSubmit} = useForm();
+  const {register: register2, formState: {errors: errors2}, handleSubmit: handleSubmit2} = useForm()
+  const {register: register3, formState: {errors: errors3}, handleSubmit: handleSubmit3} = useForm()
+  const [bgColor, setBgColor] = useState(deepOrange[500]);
+  const user = useUserStore((state) => state.user);
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+  const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
 
-    useEffect(() => {
-      // generate a random color
-      const randomColor = generateColors(deepOrange, deepPurple, blue);
+  useEffect(() => {
+    async function handleAuthentication() {
+      const isAuthenticated = await checkAuthentication();
+      if (!isAuthenticated) {
+        navigate("/login");
+    }
+    }
+
+    handleAuthentication();
+  }, []);
   
-      // set the background color
-      setBgColor(randomColor);
-    }, []);
+  useEffect(() => {
+    // generate a random color
+    const randomColor = generateColors(deepOrange, deepPurple, blue);
 
-    const initials = getInitials(user.full_name);
+    // set the background color
+    setBgColor(randomColor);
+  }, []);
 
-    const handleInformationChange = (data) => {
-      $.ajax({
-        url: 'http://dashboard-adaptech.com/api/profile.php',
-        type: 'POST',
-        data: data,
-        success: function(data) {
+  const initials = getInitials(user.full_name);
+
+  const handleInformationChange = (data) => {
+    $.ajax({
+      url: 'http://dashboard-adaptech.com/api/profile.php',
+      type: 'POST',
+      data: data,
+      success: function(data) {
+        toast.success(data.success);
+        localStorage.clear();
+        setTimeout(() => {
+          navigate('/login')
+        }, 1500);
+      },
+      error: function(error) {
+        toast.error(error);
+      }
+    });
+  }
+
+  const handlePasswordChange = (data) => {
+    $.ajax({
+      url: 'http://dashboard-adaptech.com/api/profile.php',
+      type: 'POST',
+      data: data,
+      success: function(data) {
+        if(data.error){
+          toast.error(data.error)
+        } else if(data.success){
           toast.success(data.success);
+          localStorage.clear();
           setTimeout(() => {
             navigate('/login')
           }, 1500);
-        },
-        error: function(error) {
-          toast.error(error);
         }
-      });
-    }
-
-    const handlePasswordChange = (data) => {
-      $.ajax({
-        url: 'http://dashboard-adaptech.com/api/profile.php',
-        type: 'POST',
-        data: data,
-        success: function(data) {
-          if(data.error){
-            toast.error(data.error)
-          } else if(data.success){
-            toast.success(data.success);
-            setTimeout(() => {
-              navigate('/login')
-            }, 1500);
-          }
-        },
-        error: function(error) {
-          console.log(error)
-          toast.error(error);
-        }
-      });
-    }
+      },
+      error: function(error) {
+        toast.error(error);
+      }
+    });
+  }
 
   async function handleDeleteUser(user_id) {
-    console.log(user_id)
     try {
       const response = await axios.get(`http://dashboard-adaptech.com/api/profile.php?user_id=${user_id}`);
       const data = response.data;
@@ -106,12 +120,13 @@ export default function Profile(){
         toast.error(data.error);
       } else if (data.success) {
         toast.success(data.success);
+        localStorage.clear();
         setTimeout(() => {
           navigate("/")
         }, 1500)
       }
-    } catch (err) {
-      swal('Error', `Error: ${err}`, 'error');
+    } catch (error) {
+      toast.error('Error', `Error: ${error}`, 'error');
     }
   }
   
@@ -128,12 +143,11 @@ export default function Profile(){
           toast.error(response.error);
         }
       },
-      error: function (xhr, status, error) {
-        toast.error(error); // Display the error message from the API
+      error: function (error) {
+        toast.error(error);
       },
     });
   }
-  
   
     return (
         <Box>

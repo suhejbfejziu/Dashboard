@@ -23,6 +23,8 @@ import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import useUserStore from '../userStore';
+import useAuthStore from '../authStore';
 
 function Copyright(props) {
   return (
@@ -43,21 +45,37 @@ export default function SignIn() {
   const { register, formState: { errors }, handleSubmit } = useForm();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  
+  const fetchUserInfo = useUserStore((state) => state.fetchUserInfo);
+  const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
+
+  useEffect(() => {
+    async function handleAuthentication() {
+      const isAuthenticated = await checkAuthentication();
+      if (isAuthenticated) {
+        navigate("/dashboard");
+      } else {
+        navigate("/login");
+      }
+    }
+
+    handleAuthentication();
+  }, []);
+
   const handleLogin = (data) => {
     $.ajax({
       url: 'http://dashboard-adaptech.com/api/login.php',
       type: 'POST',
       data: data,
       success: function(data) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/dashboard');
+        localStorage.setItem('token', data.jwt);
+        fetchUserInfo();
+        toast.success(data.success);
         setTimeout(() => {
-          toast.success(data.success);
+          navigate('/dashboard');
         }, 500)
       },
       error: function(error) {
-        toast.error(error.responseJSON.error, error.status);
+        toast.error(error.responseJSON.error);
       }
     });
   };

@@ -6,17 +6,19 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PropTypes from 'prop-types';
 import swal from 'sweetalert';
-import { getUsers } from '../../../api/users';
 import Button from "@mui/material/Button";
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Badge from '@mui/material/Badge';
 import Alert from '@mui/material/Alert';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
+import $ from 'jquery';
+import useUserStore from '../../../userStore';
+import useAuthStore from '../../../authStore';
+
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -50,16 +52,54 @@ function a11yProps(index) {
   };
 }
 
-export default function Users({ darkMode }) {
+export default function Users() {
   const [users, setUsers] = useState([]);
   const [value, setValue] = useState(0);
   const navigate = useNavigate();
+  const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
+  const user = useUserStore((state) => state.user);
 
   useEffect(() => {
-    getUsers(value)
-      .then(data => setUsers(data.map((user) => ({ ...user, id: user.user_id }))))
-      .catch(error => console.error(error));
+    async function handleAuthentication() {
+      const isAuthenticated = await checkAuthentication();
+      if (!isAuthenticated) {
+        navigate("/login");
+    }
+    }
+    handleAuthentication();
+  }, []);
+
+  useEffect(() => {
+    function getUsers() {
+      let url;
+      if (value === 0) {
+        url = "http://dashboard-adaptech.com/api/getUsers.php?users=0";
+      } else if (value === 1) {
+        url = "http://dashboard-adaptech.com/api/getUsers.php?users=1";
+      }
+    
+      $.ajax({
+        url: url,
+        type: 'GET',
+        beforeSend: function(xhr) {
+          xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+        },
+        success: function(data) {
+          console.log(data);
+          if (data.error) {
+            toast.error(data.error);
+          } else {
+            setUsers(data.map((user) => ({ ...user, id: user.user_id })));
+          }
+        },
+        error: function(error) {
+          toast.error(error.responseJSON.error);
+        }
+      });
+    }
+    getUsers();
   }, [value]);
+  
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -140,30 +180,28 @@ export default function Users({ darkMode }) {
   ];
 
   return (
+    <>
+    <ToastContainer         
+    position="bottom-left"
+    autoClose={1500}
+    hideProgressBar={false}
+    newestOnTop={false}
+    closeOnClick
+    rtl={false}
+    pauseOnFocusLoss
+    draggable
+    pauseOnHover
+    theme="dark" />
+    {user.isAdmin == 0 ? alert('Access Denied') : (
     <Box>
-      <ToastContainer         
-        position="bottom-left"
-        autoClose={1500}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark" />
       <Box>
         <Box sx={{ textAlign: 'center' }}>
-          <Typography sx={{ mt: 4, mb: 2, textTransform: 'uppercase' }} variant='h5'>List of users</Typography>
-          <Badge badgeContent={users.length} color="secondary">
-            <Link to='/dashboard/createuser'>
-              <Button variant="contained">Create new user <PersonAddIcon sx={{ ml: 0.5 }} /></Button>
-            </Link>
-          </Badge>
+          <Typography sx={{ mt: 4, mb: 2, textTransform: 'uppercase' }} variant='h5'>Users</Typography>
+          {user.isAdmin == 0 ? "" : <Button LinkComponent={Link} to='/dashboard/createuser' variant="contained">Create new user <PersonAddIcon sx={{ ml: 0.5 }} /></Button>}
         </Box>
         <Box sx={{ width: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
-            <Tabs textColor={darkMode ? 'inherit' : 'primary'} value={value} onChange={handleChange} aria-label="basic tabs example" centered>
+            <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" centered>
               <Tab label="Simple Users" {...a11yProps(0)} />
               <Tab label="Admin Users" {...a11yProps(1)} />
             </Tabs>
@@ -188,7 +226,7 @@ export default function Users({ darkMode }) {
                 />
               </div>
             ) : (
-              <Alert sx={{ mx: 2, justifyContent: 'center', textTransform: 'uppercase' }} severity="info">No Simple Users found!</Alert>
+              <Alert severity="warning">No Simple Users found!</Alert>
             )}
           </TabPanel>
           <TabPanel value={value} index={1}>
@@ -211,11 +249,13 @@ export default function Users({ darkMode }) {
                 />
               </div>
             ) : (
-              <Alert sx={{ mx: 2, justifyContent: 'center', textTransform: 'uppercase' }} severity="info">No Admin Users found!</Alert>
+                <Alert severity="warning">No Admin Users found!</Alert>
             )}
           </TabPanel>
         </Box>
       </Box>
     </Box>
+      )}
+    </>
   );
 }

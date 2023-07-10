@@ -13,7 +13,7 @@ async function getBookmarks(user_id) {
   async function getSavedPosts(bookmarks) {
     try {
       const postIds = bookmarks.map(bookmark => bookmark.post_id);
-      const promises = postIds.map(postId => axios.get(`http://dashboard-adaptech.com/api/posts.php?SavedPost=${postId}`));
+      const promises = postIds.map(postId => axios.get(`http://dashboard-adaptech.com/api/getPosts.php?post_id=${postId}`));
       const responses = await Promise.all(promises);
       const data = responses.flatMap(response => response.data); // Combine data from multiple responses into a single array
       return data;
