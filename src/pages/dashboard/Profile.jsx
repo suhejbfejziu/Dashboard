@@ -122,7 +122,7 @@ export default function Profile(){
         toast.success(data.success);
         localStorage.clear();
         setTimeout(() => {
-          navigate("/")
+          navigate("/login")
         }, 1500)
       }
     } catch (error) {
@@ -166,7 +166,7 @@ export default function Profile(){
           <Box className={"bg-white shadow-lg rounded-lg overflow-hidden py-8 px-4"}>
             <Typography variant='h5' sx={{textAlign:'center', textTransform: 'uppercase'}}>Profile</Typography>
             <Box className="h-56 pt-8">
-              <Tooltip title={user.full_name}>
+              <Tooltip arrow title={user.full_name}>
                 <Avatar alt="#" src="#" className='mx-auto' sx={{ width: 150, height: 150, bgcolor: bgColor}}>{initials}</Avatar>
               </Tooltip>
             </Box>
@@ -238,29 +238,33 @@ export default function Profile(){
                     <Divider />
                     <AccordionDetails>
                       <input type='hidden' {...register2('user_id')} value={user.user_id} />
-                      <TextField 
+                      <Grid container spacing={3}>
+                      <Grid item xs={12}>
+                      <TextField
                       type="password" 
                       {...register2('currentPassword', {required: true})}
                       aria-invalid={errors2.currentPassword ? "true" : "false"} 
                       label="Current Password" 
                       fullWidth
-                      margin='normal' 
                       />
                       {errors2.currentPassword?.type === "required" && (
                          <p className='text-red-500 text-sm'>Current Password is required</p>
                       )}
+                      </Grid>
+                      <Grid item xs={12}>
                       <TextField 
                       type="password" 
                       {...register2('newPassword', {required: true})} 
                       aria-invalid={errors2.newPassword ? "true" : "false"}
                       label="New Password" 
                       fullWidth 
-                      margin='normal' 
                       />
                       {errors2.newPassword?.type === "required" && (
-                         <p className='text-red-500 text-sm'>Password is required</p>
-                      )}
-                      <Button sx={{mt: 1}} variant="contained" type='submit'>Save Changes</Button>
+                        <p className='text-red-500 text-sm'>Password is required</p>
+                        )}
+                      </Grid>
+                      </Grid>
+                      <Button sx={{mt: 2}} variant="contained" type='submit'>Save Changes</Button>
                     </AccordionDetails>
                 </Accordion>
                 </Box>
@@ -288,7 +292,7 @@ export default function Profile(){
                         <Typography id="modal-modal-title" variant="h6" component="h2">
                           Confirm if it's you
                         </Typography>
-                        <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+                        <Typography id="modal-modal-description" sx={{ my: 2 }}>
                           To ensure you are the owner of the account, please provide your password.
                         </Typography>
                         <Box component="form" onSubmit={handleSubmit3(handleDelete)}>
@@ -296,7 +300,6 @@ export default function Profile(){
                           <TextField 
                           type='password' 
                           label="Current Password" 
-                          margin='normal' 
                           fullWidth 
                           {...register3('password', {required: true})}
                           aria-invalid={errors3.password ? "true" : "false"} />

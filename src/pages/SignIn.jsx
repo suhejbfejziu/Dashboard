@@ -72,7 +72,7 @@ export default function SignIn() {
         toast.success(data.success);
         setTimeout(() => {
           navigate('/dashboard');
-        }, 500)
+        }, 1000)
       },
       error: function(error) {
         toast.error(error.responseJSON.error);

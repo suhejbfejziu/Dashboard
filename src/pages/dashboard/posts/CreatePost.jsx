@@ -1,12 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getCategories } from '../../../api/posts';
 import $ from 'jquery';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useForm } from 'react-hook-form';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
@@ -19,156 +16,173 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import FormControl from '@mui/material/FormControl';
+import { useNavigate, useLocation } from 'react-router';
+import { Link } from 'react-router-dom';
+import moment from 'moment/moment';
 import useUserStore from '../../../userStore';
 import useAuthStore from '../../../authStore';
+import Stack from '@mui/material/Stack';
+import Editor from '../../../Editor';
 
 export default function CreatePost() {
-const location = useLocation();
-const [categories, setCategories] = useState([]);
-const {register, formState: {errors}, handleSubmit} = useForm()
-const postId = location.state?.post_id;
-const theme = createTheme();
-const navigate = useNavigate();
-const user = useUserStore((state) => state.user);
-const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
-
-useEffect(() => {
+  const location = useLocation();
+  const [categories, setCategories] = useState([]);
+  const postId = location.state?.post_id;
+  const theme = createTheme();
+  const navigate = useNavigate();
+  const [description, setDescription] = useState(location.state?.description || '');
+  const user = useUserStore((state) => state.user);
+  const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
+  
+  useEffect(() => {
     async function handleAuthentication() {
-        const isAuthenticated = await checkAuthentication();
-        if (!isAuthenticated) {
-            navigate("/login");
-        }
+      const isAuthenticated = await checkAuthentication();
+      if (!isAuthenticated) {
+        navigate('/login');
+      }
     }
 
     handleAuthentication();
-    }, []);
+  }, []);
 
-useEffect(() => {
+  useEffect(() => {
     getCategories()
-    .then(data => setCategories(data))
-    .catch(error => console.error(error));
-}, [])
+      .then((data) => setCategories(data))
+      .catch((error) => console.error(error));
+  }, []);
 
-const handleCreatePost = (data) => {
-    const url = postId ? 'http://dashboard-adaptech.com/api/posts.php' : 'http://dashboard-adaptech.com/api/posts.php?posts';
+  const handleEditorChange = (html) => {
+    setDescription(html);
+  };
+
+  const handleCreatePost = (e) => {
+    e.preventDefault();
+    const post = $("#createpost").serialize();
+    const url = postId
+      ? 'http://dashboard-adaptech.com/api/posts.php'
+      : 'http://dashboard-adaptech.com/api/posts.php?posts';
     $.ajax({
-        url: url,
-        type: 'POST',
-        data: data,
-        success: function(data) {
+      url: url,
+      type: 'POST',
+      data: post,
+      success: function (data) {
         toast.success(data.success);
         setTimeout(() => {
-            navigate('/posts');
-            }, 1000);
-        },
-        error: function(error) {
-            toast.error(error);
-        }
-        });
-    };
+          navigate('/posts');
+        }, 1000);
+      },
+      error: function (error) {
+        console.log(error)
+        toast.error(error);
+      },
+    });
+  };
 
-return (
+  return (
     <ThemeProvider theme={theme}>
-        <Container sx={{ my: 4 }} component="main" maxWidth="xs">
+      <Container sx={{ my: 4 }} component="main" maxWidth="md">
         <ToastContainer
-            position="bottom-left"
-            autoClose={1500}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="dark" />
-            <CssBaseline />
-            <Box>
-                <Box                    
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}>
-                    <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-                        <PostAddIcon />
-                    </Avatar>
-                    <Typography className="uppercase" component="h1" variant="h5">
-                        {location.state ? 'Edit Post' : 'Create post'}
-                    </Typography>
-                </Box>
-                <Box component="form" onSubmit={handleSubmit(handleCreatePost)} sx={{ mt: 1 }}>
-                    {postId ? <input type="hidden" {...register('post_id')} value={postId} /> : ""}
-                    <input type='hidden' {...register('user_id')} value={user.user_id} />
-                    <TextField
-                        autoFocus
-                        margin="normal"
-                        fullWidth
-                        type="text"
-                        label="Title"
-                        defaultValue={location.state?.title || ""}
-                        {...register('title', {required: true})}
-                        aria-invalid={errors.title ? "true" : "false"}
-                    />
-                    {errors.title?.type === "required" && (
-                        <p className='text-red-500 text-sm'>Title is required</p>
-                    )}
-                    <TextField
-                        margin="normal"
-                        fullWidth
-                        multiline
-                        rows={6}
-                        type="text"
-                        defaultValue={location.state?.description || ""}
-                        label="What's on your mind?"
-                        {...register('description', {required: true})}
-                        aria-invalid={errors.description ? "true" : "false"}
-                    />
-                    {errors.description?.type === "required" && (
-                        <p className='text-red-500 text-sm'>Description is required</p>
-                    )}
-                    <FormControl fullWidth margin="normal">
-                        <InputLabel id="select-category">Category</InputLabel>
-                        <Select
-                            labelId="select-category"
-                            label="Category"
-                            {...register('category_id', {required: true})}
-                            aria-invalid={errors.category ? "true" : "false"}
-                            defaultValue={location.state?.category_id || ""}
-                        >
-                            {categories.map((category) => (
-                                <MenuItem key={category.category_id} value={category.category_id}>
-                                    {category.category_name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    {errors.category?.type === "required" && (
-                        <p className='text-red-500 text-sm'>Category is required</p>
-                    )}
-                    <TextField
-                        margin="normal"
-                        fullWidth
-                        type="datetime-local"
-                        label="CreatedAt"
-                        defaultValue={location.state?.createdAt || ""}
-                        {...register('createdAt', {required: true})}
-                        aria-invalid={errors.createAt ? "true" : "false"}
-                    />
-                    {errors.createdAt?.type === "required" && (
-                        <p className='text-red-500 text-sm'>Created At is required</p>
-                    )}
-                    <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        sx={{ mt: 3, mb: 2 }}
-                    >
-                        {location.state ? 'Edit' : 'Post'}
-                    </Button>
-                    <Button component={Link} to={"/dashboard/posts"} variant="outlined" fullWidth>Cancel</Button>
-                </Box>
-            </Box>
-        </Container>
+          position="bottom-left"
+          autoClose={1500}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+        <CssBaseline />
+        <Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+              <PostAddIcon />
+            </Avatar>
+            <Typography className="uppercase" component="h1" variant="h5">
+              {location.state ? 'Edit Post' : 'Create post'}
+            </Typography>
+          </Box>
+          <form id="createpost" onSubmit={handleCreatePost}>
+            {postId && (
+              <input
+                type="hidden"
+                id="post_id"
+                name="post_id"
+                value={postId}
+              />
+            )}
+            <input
+              type="hidden"
+              id="user_id"
+              name="user_id"
+              value={user.user_id}
+            />
+            <TextField
+              autoFocus
+              margin="normal"
+              fullWidth
+              required
+              id="title"
+              name="title"
+              type="text"
+              label="Title"
+              defaultValue={location.state?.title || ''}
+            />
+            <FormControl sx={{ mb: 3 }} fullWidth margin="normal">
+              <InputLabel id="select-category">Category *</InputLabel>
+              <Select
+                labelId="select-category"
+                label="Category"
+                required
+                id="category_id"
+                name="category_id"
+                defaultValue={location.state?.category_id || ''}
+              >
+                {categories.map((category) => (
+                  <MenuItem
+                    key={category.category_id}
+                    value={category.category_id}
+                  >
+                    {category.category_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <input
+              type="hidden"
+              id="createdAt"
+              name="createdAt"
+              value={moment().format()}
+            />
+            <Editor placeholder={'Write something...'} value={description} onEditorChange={handleEditorChange}/>
+            <input
+              type="hidden"
+              id="description"
+              name="description"
+              value={description}
+            />
+            <Stack sx={{my: 2}} spacing={2} direction="row">
+              <Button component={Link} to="/posts" variant="outlined" fullWidth>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+              >
+                {location.state ? 'Edit' : 'Post'}
+              </Button>
+            </Stack>
+          </form>
+        </Box>
+      </Container>
     </ThemeProvider>
-);
+  );
 }

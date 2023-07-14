@@ -142,7 +142,7 @@ export default function DashboardHeader() {
             <ListItemText primary="Dashboard" />
           </ListItemButton>
         </ListItem>
-        { user.isAdmin == 0 ? "" :  <ListItem disablePadding>
+        { user.isAdmin == 1 && <ListItem disablePadding>
           <ListItemButton component={Link} to="/dashboard/users">
             <ListItemIcon><PersonAdd /></ListItemIcon>
             <ListItemText primary="Users" />
@@ -212,7 +212,7 @@ export default function DashboardHeader() {
             noWrap
             component={Link}
             to={'/dashboard'}
-            sx={{ display: { xs: 'none', sm: 'block' } }}
+            sx={{ display: { xs: 'none', sm: 'block' }, color: 'white' }}
           >
             User Connectivity <Typography variant='caption'>Dashboard</Typography>
           </Typography>
@@ -253,7 +253,7 @@ export default function DashboardHeader() {
                 <MenuItem component={Link} to={'/dashboard'} onClick={handleClose} disableRipple>
                   <DashboardIcon /> Dashboard
                 </MenuItem>
-              {user.isAdmin == 0 ? "" : 
+              {user.isAdmin == 1 && 
                 <MenuItem component={Link} to={'/dashboard/users'} onClick={handleClose} disableRipple>
                   <PersonAdd /> Users
                 </MenuItem> 

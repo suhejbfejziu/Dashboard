@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import Button from "@mui/material/Button"
 import Typography from '@mui/material/Typography';
 import useAuthStore from '../authStore';
+import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated)
-  
+  const navigate = useNavigate()
+
   return (      
         <nav className="bg-[#1976d2] border-b h-16 px-6 border-white/5 flex items-center justify-between">
         <Typography
@@ -18,10 +20,11 @@ export default function Header() {
             User Connectivity
           </Typography>
           <div className="inline-flex items-center gap-2 list-none lg:ml-auto">
-        { isLoggedIn ? 
-          <Button LinkComponent={Link} to={"/dashboard"} sx={{color: 'white'}}>
-            Go to dashboard
-          </Button> :
+          { isLoggedIn ? 
+            <Button LinkComponent={Link} to={"/dashboard"} sx={{color: 'white'}}>
+              Go to dashboard
+            </Button> 
+            :
           <>
             <Button LinkComponent={Link} to={"/login"} sx={{color: 'white'}}>
               Sign in
@@ -30,7 +33,7 @@ export default function Header() {
               Sign up
             </Button>
           </>
-        }
+          }
           </div>
         </nav>
   );

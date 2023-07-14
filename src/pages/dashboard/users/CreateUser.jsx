@@ -4,7 +4,6 @@ import $ from 'jquery';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useForm } from "react-hook-form";
-import PersonIcon from '@mui/icons-material/Person';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -24,6 +23,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Grid from '@mui/material/Grid';
 import useAuthStore from "../../../authStore";
+import useUserStore from "../../../userStore";
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 function validatePassword(password) {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$/;
@@ -42,6 +43,7 @@ export default function CreateUser(){
   const userId = location?.state?.user_id
   const navigate = useNavigate()
   const theme = createTheme();
+  const user = useUserStore((state) => state.user);
   const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
   
   useEffect(() => {
@@ -111,6 +113,10 @@ export default function CreateUser(){
           theme="dark" />
         <CssBaseline />
         <Container sx={{ my: 4}} component="main" maxWidth="xs">
+          {user.isAdmin == 0 ? 
+          useEffect(() => {
+            navigate('/dashboard') 
+          }, []) : (
           <Box
             sx={{
               display: 'flex',
@@ -118,14 +124,14 @@ export default function CreateUser(){
               alignItems: 'center',
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-              <PersonIcon />
+            <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+              <PersonAddIcon />
             </Avatar>
             <Typography className='uppercase' component="h1" variant="h5">
               {location.state ? "Edit user" : "Create user"}
             </Typography>
             <Box sx={{mt: 2}} component="form" onSubmit={handleSubmit(handleCreateUser)}>
-            {userId ? <input type="hidden" {...register('user_id')} value={userId} /> : ""}
+            {userId && <input type="hidden" {...register('user_id')} value={userId} />}
             <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -226,6 +232,7 @@ export default function CreateUser(){
               <Button component={Link} to={"/dashboard/users"} variant="outlined" fullWidth>Cancel</Button>
             </Box>
           </Box>
+          )}
         </Container>
       </ThemeProvider>
     );

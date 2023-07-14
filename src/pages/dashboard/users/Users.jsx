@@ -7,7 +7,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PropTypes from 'prop-types';
 import swal from 'sweetalert';
 import Button from "@mui/material/Button";
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Tabs from '@mui/material/Tabs';
@@ -85,7 +84,6 @@ export default function Users() {
           xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
         },
         success: function(data) {
-          console.log(data);
           if (data.error) {
             toast.error(data.error);
           } else {
@@ -192,12 +190,15 @@ export default function Users() {
     draggable
     pauseOnHover
     theme="dark" />
-    {user.isAdmin == 0 ? alert('Access Denied') : (
+    {user.isAdmin == 0 ? 
+    useEffect(() => {
+      navigate('/dashboard')
+    }, [])  : (
     <Box>
       <Box>
         <Box sx={{ textAlign: 'center' }}>
-          <Typography sx={{ mt: 4, mb: 2, textTransform: 'uppercase' }} variant='h5'>Users</Typography>
-          {user.isAdmin == 0 ? "" : <Button LinkComponent={Link} to='/dashboard/createuser' variant="contained">Create new user <PersonAddIcon sx={{ ml: 0.5 }} /></Button>}
+          <p className='text-center text-2xl font-medium underline mt-8 mb-4 uppercase'>Users</p>
+          {user.isAdmin == 1 && <Button LinkComponent={Link} to='/dashboard/createuser' variant="contained">Create new user <PersonAddIcon sx={{ ml: 0.5 }} /></Button>}
         </Box>
         <Box sx={{ width: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>

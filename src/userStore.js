@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import axios from 'axios';
 
 const useUserStore = create((set) => ({
   user: null,
@@ -6,14 +7,13 @@ const useUserStore = create((set) => ({
   fetchUserInfo: async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://dashboard-adaptech.com/api/getUserInfo.php', {
-        method: 'GET',
+      const response = await axios.get('http://dashboard-adaptech.com/api/getUserInfo.php', {
         headers: {
           'Authorization': 'Bearer ' + token
         }
       });
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = response.data;
         set(() => ({ user: data }));
       } else {
         throw new Error('Error fetching user info');

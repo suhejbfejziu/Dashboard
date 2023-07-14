@@ -124,11 +124,8 @@ export default function Bookmarks() {
                     image="https://source.unsplash.com/random?wallpapers"
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography sx={{wordBreak: 'break-all'}} gutterBottom variant="h5" component="h2">
-                    {post.title.length > 15 ? post.title.substring(0, 25) + "..." : post.title}
-                    </Typography>
-                    <Typography sx={{wordBreak: 'break-all'}} variant="subtitle1" gutterBottom>
-                    {post.description.length > 25 ? post.description.substring(0, 50) + "..." : post.description}
+                    <Typography sx={{wordBreak: 'break-all'}} className="underline" gutterBottom variant="h5" component="h2">
+                    {post.title.length > 25 ? post.title.substring(0, 25) + "..." : post.title}
                     </Typography>
                     <Button variant="outlined">Read more...</Button>
                   </CardContent>

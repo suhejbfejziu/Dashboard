@@ -20,6 +20,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import useUserStore from "../../../userStore";
 import useAuthStore from "../../../authStore";
+import TextField from '@mui/material/TextField'
+import moment from "moment";
 
 const style = {
   position: 'absolute',
@@ -43,7 +45,7 @@ export default function PostDetailPage() {
   const user = useUserStore((state) => state.user);
   const checkAuthentication = useAuthStore((state) => state.checkAuthentication);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated)
-  
+
   const handleOpenModal = (comment) => {
     setSelectedComment(comment);
     setOpen(true);
@@ -110,7 +112,8 @@ export default function PostDetailPage() {
           if (comment.comment_id === selectedComment.comment_id) {
             return {
               ...comment,
-              description: data.comment.description // Update the description field with the new value
+              description: data.comment.description,
+              createdAt: data.comment.createdAt
             };
           }
           return comment;
@@ -164,18 +167,18 @@ export default function PostDetailPage() {
         theme="dark"
       />
       {posts.map(post => (
-        <section key={post.post_id} className="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-gray-100 dark:bg-gray-900">
-          <div className="flex justify-between px-4 mx-auto max-w-screen-xl ">
-            <article className="mx-auto w-full max-w-2xl format format-sm sm:format-base lg:format-lg format-blue dark:format-invert">
-              <header className="mb-4 lg:mb-6 not-format">
+        <section key={post.post_id} className="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-gray-100">
+          <div className="flex justify-between px-4 mx-auto max-w-screen-xl">
+            <article className="mx-auto w-full max-w-2xl format format-sm sm:format-base lg:format-lg format-blue">
+              <header className="mb-4 lg:mb-6">
                 <address className="flex items-center mb-6 not-italic">
                   <div className="inline-flex items-center mr-3 text-sm text-gray-900 dark:text-white">
                     <img className="mr-4 w-16 h-16 rounded-full" src="author profile" alt="Author Image" />
                     <div>
                       <Tooltip title="Posted by" arrow>
-                        <p className="text-xl font-bold text-gray-900 dark:text-white">{post.full_name}</p>
+                        <p className="text-xl font-bold text-gray-900">{post.full_name}</p>
                       </Tooltip>
-                      <p className="text-base font-light text-gray-500 dark:text-gray-400">{post.category_name} / {getTimeElapsed(post.createdAt)}</p>
+                      <p className="text-base font-light text-gray-500">{post.category_name} / {getTimeElapsed(post.createdAt)}</p>
                     </div>
                   </div>
                   <div className="ml-auto flex items-center">
@@ -187,10 +190,10 @@ export default function PostDetailPage() {
                     </Tooltip>
                   </div>
                 </address>
-                <h1 className="mb-4 text-3xl font-extrabold leading-tight text-gray-900 lg:mb-6 lg:text-4xl dark:text-white">{post.title}</h1>
+                <h1 className="text-gray-900 lg:mb-6 lg:text-4xl">{post.title}</h1>
+                <div className="ql-editor" dangerouslySetInnerHTML={{ __html: post.description }}></div>
               </header>
-              <p className="lead">{post.description}</p>
-            </article>
+           </article>
           </div>
         </section>
       ))}
@@ -203,59 +206,50 @@ export default function PostDetailPage() {
         <form className="mb-6" onSubmit={handleSubmit(handleCreateComment)}>
             <input type="hidden" {...register('post_id')} value={params.id} />
             <input type="hidden" {...register('user_id')} value={user.user_id} />
-            <div className="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-              <textarea
-                rows="6"
+            <input type="hidden" {...register('createdAt')} value={moment().format()} />
+            <div className="py-2 mb-4">
+              <TextField
+                label="Write a comment"
                 {...register('description', { required: true })}
                 aria-invalid={errors.description ? "true" : "false"}
-                className="px-0 w-full text-sm text-gray-900 border-0 focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400 dark:bg-gray-800"
-                placeholder="Write a comment..."
-              ></textarea>
+                multiline
+                fullWidth
+                rows={4}
+              />
               {errors.description?.type === "required" && (
                 <p className="text-red-500 text-sm">Description is required</p>
               )}
             </div>
-            <button
-              type="submit"
-              className="inline-flex items-center py-2.5 px-4 text-xs font-medium text-center text-white bg-primary-700 rounded-lg focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900 hover:bg-primary-800"
-            >
+            <Button variant="contained" type="submit">
               Post comment
-            </button>
-        </form> ) : <p className="text-red-500 italic">In order to leave a comment, please <Link className="underline" to="/login">log in</Link> first to gain access</p>
-        }
+            </Button>
+        </form> 
+        ) : ( 
+        <p className="text-red-500 italic">In order to leave a comment, please <Link className="underline" to="/login">log in</Link> first to gain access</p>
+        )}
           {comments.map((comment) => (
-            <section key={comment.comment_id} className="p-6 mb-6 text-base bg-white border-t border-gray-200 dark:border-gray-700 rounded-lg dark:bg-gray-900">
+            <section key={comment.comment_id}>
               <div className="flex items-center">
-                <p className="inline-flex items-center mr-3 text-sm text-gray-900 dark:text-white">{comment.full_name}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{comment.createdAt}</p>
+                <p className="inline-flex items-center mr-3 text-sm text-gray-900">{comment.full_name}</p>
+                <p className="text-sm text-gray-600">{getTimeElapsed(comment.createdAt)}</p>
               </div>
-              <p className="text-gray-500 dark:text-gray-400">{comment.description}</p>
-              <div className="flex items-center mt-4">
-                <button type="button" className="flex items-center text-sm text-gray-500 hover:underline dark:text-gray-400">
-                  <svg
-                    aria-hidden="true"
-                    className="mr-1 w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                  </svg>
-                  Reply
-                </button>
+              <p className="text-gray-500">{comment.description}</p>
+              <div className="flex items-center">
+              <Button variant="outlined">Reply</Button>
                 <div className="ml-auto">
-                {isLoggedIn ? <>
+                {isLoggedIn && 
+                <>
                   <IconButton onClick={() => handleOpenModal(comment)}>
                     <EditIcon />
                   </IconButton>
                   <IconButton onClick={() => handleDeleteComment(comment.comment_id)}>
                     <DeleteIcon />
                   </IconButton>
-                  </> : ""
+                </>
                 }
                 </div>
               </div>
+              <hr />
             </section>
           ))}
           <div>
@@ -266,25 +260,28 @@ export default function PostDetailPage() {
             aria-describedby="modal-modal-description"
           >
             <Box sx={style}>
-              <Typography sx={{ mb: 2 }} id="modal-modal-title" variant="h6" component="h2">
-                Edit comment
-              </Typography>
-              <form id="handleEditForm" onSubmit={handleEditComment}>
-                <input id="comment_id" name="comment_id" type="hidden" value={selectedComment?.comment_id} />
-                <div className="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                  <textarea
-                    id="description"
-                    name="description"
-                    rows="6"
-                    className="px-0 w-full text-sm text-gray-900 border-0 focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400 dark:bg-gray-800"
-                    defaultValue={selectedComment?.description}
-                  ></textarea>
-                </div>
-                <div className="flex justify-end">
-                  <Button onClick={handleCloseModal} sx={{ mr: 2 }}>Cancel</Button>
-                  <Button type="submit" variant="contained" disableElevation>Edit</Button>
-                </div>
-              </form>
+            <Typography sx={{ mb: 2 }} id="modal-modal-title" variant="h6" component="h2">
+              Edit comment
+            </Typography>
+            <form id="handleEditForm" onSubmit={handleEditComment}>
+              <input id="comment_id" name="comment_id" type="hidden" value={selectedComment?.comment_id} />
+              <input id="createdAt" name="createdAt" type="hidden" value={moment().format()} />
+              <TextField
+                id="description"
+                name="description"
+                label="Edit comment"
+                multiline
+                required
+                fullWidth
+                defaultValue={selectedComment?.description}
+                rows={4}
+                sx={{mb: 2}}
+              />
+              <div className="flex justify-end">
+                <Button onClick={handleCloseModal} sx={{ mr: 2 }}>Cancel</Button>
+                <Button type="submit" variant="contained" disableElevation>Edit</Button>
+              </div>
+            </form>
             </Box>
           </Modal>
           </div>

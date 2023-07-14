@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
 import GroupIcon from '@mui/icons-material/Group';
 import ArticleIcon from '@mui/icons-material/Article';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
@@ -46,12 +45,12 @@ return (
     />
     <div className='flex text-center' style={{ height: '100vh' }}>
       <div className='w-2/4 bg-gray-100 flex flex-col justify-center'>
-        <Balancer className='text-2xl font-medium mx-auto'>Welcome, {user.full_name}</Balancer>
+        <Balancer className='text-3xl font-medium mx-auto'>Welcome, {user.full_name}</Balancer>
         <Balancer className='mx-auto my-6'>We are delighted to welcome you here. Please feel at home and take advantage of the various services that we offer.</Balancer>
         <ButtonGroup variant="outlined" aria-label="outlined button group" sx={{mx: 'auto'}}>
-          {user.isAdmin == 0 ? "" : <Button component={Link} to={'/dashboard/users'}>Users <GroupIcon sx={{ ml: 0.5 }} /></Button>}
-          <Button component={Link} to={'/posts'}>Posts <ArticleIcon sx={{ ml: 0.5 }} /></Button>
-          <Button component={Link} to={'/dashboard/bookmarks'}>Bookmarks <BookmarkIcon sx={{ ml: 0.5 }} /></Button>
+        {user.isAdmin == 1 && <Button component={Link} to={'/dashboard/users'}>Users <GroupIcon sx={{ ml: 0.5 }} /></Button>}
+        <Button component={Link} to={'/posts'}>Posts <ArticleIcon sx={{ ml: 0.5 }} /></Button>
+        <Button component={Link} to={'/dashboard/bookmarks'}>Bookmarks <BookmarkIcon sx={{ ml: 0.5 }} /></Button>
         </ButtonGroup>
       </div>
       <div className='w-2/4 bg-slate-200 flex flex-col justify-center'>
