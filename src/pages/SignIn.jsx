@@ -68,7 +68,6 @@ export default function SignIn() {
       data: data,
       success: function(data) {
         localStorage.setItem('token', data.jwt);
-        fetchUserInfo();
         toast.success(data.success);
         setTimeout(() => {
           navigate('/dashboard');

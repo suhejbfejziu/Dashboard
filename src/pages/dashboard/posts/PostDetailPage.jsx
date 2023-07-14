@@ -181,8 +181,8 @@ export default function PostDetailPage() {
                       <p className="text-base font-light text-gray-500">{post.category_name} / {getTimeElapsed(post.createdAt)}</p>
                     </div>
                   </div>
-                  <div className="ml-auto flex items-center">
-                    <p>Share</p>
+                  <div className="ml-auto flex flex-col items-center">
+                    <small>Share</small>
                     <Tooltip arrow title="Copy Link">
                       <IconButton onClick={copyToClipboard}>
                         <ShareIcon />

@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { 
   Route, 
   createBrowserRouter, 
@@ -20,40 +19,16 @@ import Dashboard from './pages/dashboard/Dashboard';
 import Profile from './pages/dashboard/Profile';``
 import Bookmarks from './pages/dashboard/Bookmarks';
 import useUserStore from './userStore';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
+import { useQuery } from 'react-query';
 
 export default function App() {
-  const [loading, setLoading] = useState(true); // State to track loading state
   const fetchUserInfo = useUserStore((state) => state.fetchUserInfo);
+  const { isLoading, error } = useQuery('userInfo', fetchUserInfo);
 
-  useEffect(() => {
-    fetchUserInfo()
-    .then(() => {
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error(error);
-        setLoading(false);
-      });
-  }, []);
+  if(isLoading) return "Loading..."
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-        }}
-      >
-        <Box>
-          <CircularProgress />
-        </Box>
-      </div>
-    );
-  }
+  if (error) return 'An error has occurred: ' + error.message
+
 
   const router = createBrowserRouter(createRoutesFromElements(
         <Route>

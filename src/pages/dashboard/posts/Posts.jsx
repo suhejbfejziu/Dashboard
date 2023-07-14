@@ -184,7 +184,7 @@ export default function Posts() {
         </CardActionArea>
         <Divider />
         {isLoggedIn && 
-          <CardActions>
+          <CardActions sx={{display: 'flex', justifyContent: 'center'}}>
           <Tooltip title="Edit" arrow>
             <IconButton aria-label="edit" onClick={() => handleEditPost(item.post_id)}>
               <EditIcon />
